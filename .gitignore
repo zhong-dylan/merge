@@ -1,0 +1,8 @@
+
+project/.vscode
+project/Library
+project/Logs
+project/Temp
+*.csproj
+*.sln
+project/Server/logs
