@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: LaunchConfig
   m_EditorClassIdentifier: 
   serverKey: local_socket_server_key_change_me
-  userName: player_001
+  userName: player_002
   serverOptions:
   - displayName: Local
     address: http://127.0.0.1:7350

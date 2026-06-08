@@ -5,6 +5,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="${SCRIPT_DIR}/logs"
 LOG_FILE="${LOG_DIR}/nakama-$(date +%Y%m%d-%H%M%S).log"
+NAKAMA_VERSION="3.39.0"
+NAKAMA_IMAGE="heroiclabs/nakama:${NAKAMA_VERSION}"
+PLUGINBUILDER_IMAGE="heroiclabs/nakama-pluginbuilder:${NAKAMA_VERSION}"
 cd "${SCRIPT_DIR}"
 
 ensure_docker_running() {
@@ -39,11 +42,30 @@ ensure_docker_running
 
 mkdir -p "${LOG_DIR}"
 
+ensure_image_present() {
+  local image="$1"
+
+  if docker image inspect "${image}" >/dev/null 2>&1; then
+    echo "Using local image: ${image}"
+    return 0
+  fi
+
+  echo "Pulling missing image: ${image}"
+  docker pull "${image}"
+}
+
+echo "Checking Nakama base images..."
+ensure_image_present "${NAKAMA_IMAGE}"
+ensure_image_present "${PLUGINBUILDER_IMAGE}"
+
 echo "Starting PostgreSQL..."
 docker compose up -d postgres
 
+echo "Building Nakama image with local Docker cache..."
+DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose build --pull=false nakama
+
 echo "Starting Nakama..."
-docker compose up -d nakama
+docker compose up -d --no-build nakama
 
 echo "Services are up:"
 docker compose ps

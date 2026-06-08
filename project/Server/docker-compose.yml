@@ -21,8 +21,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      pull: false
     container_name: nakama
-    platform: linux/amd64
     restart: unless-stopped
     depends_on:
       postgres:
