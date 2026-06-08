@@ -5,6 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "LaunchConfig", menuName = "Game/Launch Config")]
 public class LaunchConfig : ScriptableObject
 {
+    [SerializeField] private bool enableLogger = true;
     [SerializeField] private string serverKey = "local_socket_server_key_change_me";
     [SerializeField] private string userName = "player_001";
     [SerializeField] private List<ServerOption> serverOptions = new()
@@ -15,6 +16,7 @@ public class LaunchConfig : ScriptableObject
     };
     [SerializeField] private int selectedServerIndex;
 
+    public bool EnableLogger => enableLogger;
     public string ServerKey => serverKey;
     public string UserName => userName;
     public IReadOnlyList<ServerOption> ServerOptions => serverOptions;
