@@ -2,7 +2,7 @@ using UnityEngine;
 
 public static class UIConst
 {
-    public const float DesignWidth = 1280f;
+    public const float DesignWidth = 1080f;
     public const float DesignHeight = 1920f;
 
     public static readonly Vector2 DesignResolution = new(DesignWidth, DesignHeight);
