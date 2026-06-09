@@ -11,10 +11,17 @@ public class AddressablesGroupAutoSync : AssetPostprocessor
         string[] movedAssets,
         string[] movedFromAssetPaths)
     {
-        if (!HasManagedAssetChange(importedAssets)
-            && !HasManagedAssetChange(deletedAssets)
-            && !HasManagedAssetChange(movedAssets)
-            && !HasManagedAssetChange(movedFromAssetPaths))
+        var hasAddressableChange = HasManagedAssetChange(importedAssets)
+            || HasManagedAssetChange(deletedAssets)
+            || HasManagedAssetChange(movedAssets)
+            || HasManagedAssetChange(movedFromAssetPaths);
+
+        var hasAtlasChange = HasManagedAtlasChange(importedAssets)
+            || HasManagedAtlasChange(deletedAssets)
+            || HasManagedAtlasChange(movedAssets)
+            || HasManagedAtlasChange(movedFromAssetPaths);
+
+        if (!hasAddressableChange && !hasAtlasChange)
         {
             return;
         }
@@ -23,12 +30,15 @@ public class AddressablesGroupAutoSync : AssetPostprocessor
             .Concat(deletedAssets)
             .Concat(movedAssets)
             .Concat(movedFromAssetPaths)
-            .Where(AddressablesGroupBuilder.IsManagedPath)
-            .Distinct();
+            .Distinct()
+            .ToArray();
 
         foreach (var path in changedPaths)
         {
-            pendingPaths.Add(path);
+            if (AddressablesGroupBuilder.IsManagedPath(path) || SpriteAtlasAutoBuilder.IsManagedAtlasPath(path))
+            {
+                pendingPaths.Add(path);
+            }
         }
 
         EditorApplication.delayCall -= DelayedSync;
@@ -39,11 +49,17 @@ public class AddressablesGroupAutoSync : AssetPostprocessor
     {
         var paths = pendingPaths.ToArray();
         pendingPaths.Clear();
+        SpriteAtlasAutoBuilder.SyncChangedPaths(paths);
         AddressablesGroupBuilder.SyncChangedPaths(paths);
     }
 
     private static bool HasManagedAssetChange(string[] assetPaths)
     {
         return assetPaths.Any(AddressablesGroupBuilder.IsManagedPath);
+    }
+
+    private static bool HasManagedAtlasChange(string[] assetPaths)
+    {
+        return assetPaths.Any(SpriteAtlasAutoBuilder.IsManagedAtlasPath);
     }
 }

@@ -34,6 +34,7 @@ public class GameLaunch : MonoBehaviour
         _ = PlayerPrefsMgr.I;
         _ = EventMgr.I;
         _ = PoolMgr.I;
+        _ = AtlasMgr.I;
         _ = CfgMgr.I;
         _ = ModelMgr.I;
         _ = AssetsMgr.I;

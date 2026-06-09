@@ -58,8 +58,9 @@ public class ViewBase : MonoItem
         }
     }
 
-    protected virtual void OnDestroy()
+    protected override void OnDestroy()
     {
+        base.OnDestroy();
         StopAutoClose();
         if (Application.isPlaying)
         {

@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: remote_Shaders
+  m_EditorClassIdentifier: 
+  m_GroupName: remote_Shaders
+  m_Data:
+    m_SerializedData: []
+  m_GUID: 7b7e68367e86f45208a993595e614dd7
+  m_SerializeEntries:
+  - m_GUID: 220f9c6e50844d5d88b89b7c9226bc4c
+    m_Address: Shaders/UIGray_remote
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 7b43ad4c151644c54b239f32ea74e68e, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 13e66fbdb6c374e7ca83dc5bd0630bee, type: 2}
+    - {fileID: 11400000, guid: 9e2f86c53f38643e792079c7192dad64, type: 2}

@@ -1,15 +1,40 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class MonoItem : MonoBehaviour
 {
+    // Track runtime image bindings so atlas/bg Addressables can be released when swapped or destroyed.
+    private sealed class ImageBinding
+    {
+        public string AtlasName;
+        public string SpriteName;
+        public bool IsAtlasSprite;
+    }
+
+    private sealed class ImageMaterialState
+    {
+        public Material OriginalMaterial;
+        public bool IsGray;
+        public int RequestVersion;
+    }
+
+    private sealed class TextColorState
+    {
+        public Color OriginalColor;
+        public bool IsGray;
+    }
+
     private readonly Dictionary<string, Button> buttonMap = new();
     private readonly Dictionary<string, Image> imageMap = new();
     private readonly Dictionary<string, Component> textMap = new();
     private readonly Dictionary<string, GameObject> gameObjectMap = new();
     private readonly Dictionary<string, UIPointerHandler> pointerHandlerMap = new();
+    private readonly Dictionary<string, ImageBinding> imageBindings = new();
+    private readonly Dictionary<string, ImageMaterialState> imageMaterialStates = new();
+    private readonly Dictionary<string, TextColorState> textColorStates = new();
 
     public IReadOnlyDictionary<string, Button> Buttons => buttonMap;
     public IReadOnlyDictionary<string, Image> Images => imageMap;
@@ -26,6 +51,15 @@ public class MonoItem : MonoBehaviour
         CollectNodes();
     }
 
+    protected virtual void OnDestroy()
+    {
+        var bindingKeys = new List<string>(imageBindings.Keys);
+        for (var i = 0; i < bindingKeys.Count; i++)
+        {
+            ReleaseImageBinding(bindingKeys[i]);
+        }
+    }
+
     protected void CollectNodes()
     {
         buttonMap.Clear();
@@ -33,6 +67,9 @@ public class MonoItem : MonoBehaviour
         textMap.Clear();
         gameObjectMap.Clear();
         pointerHandlerMap.Clear();
+        imageBindings.Clear();
+        imageMaterialStates.Clear();
+        textColorStates.Clear();
 
         var transforms = GetComponentsInChildren<Transform>(true);
         foreach (var current in transforms)
@@ -150,6 +187,89 @@ public class MonoItem : MonoBehaviour
         return GetByHash(textMap, hash) as T;
     }
 
+    public void SetText(string name, string value)
+    {
+        var textComponent = GetText<Component>(name);
+        if (textComponent == null)
+        {
+            Logger.Warn($"Text target not found: {name}", this);
+            return;
+        }
+
+        SetTextComponentValue(textComponent, value);
+    }
+
+    public void SetText(int hash, string value)
+    {
+        var textComponent = GetText<Component>(hash);
+        if (textComponent == null)
+        {
+            return;
+        }
+
+        SetTextComponentValue(textComponent, value);
+    }
+
+    public void SetTextFormat(string name, string format, params object[] args)
+    {
+        SetText(name, string.Format(format, args));
+    }
+
+    public void SetTextFormat(int hash, string format, params object[] args)
+    {
+        SetText(hash, string.Format(format, args));
+    }
+
+    public void SetTextColor(string name, Color color)
+    {
+        var graphic = GetText<Graphic>(name);
+        if (graphic == null)
+        {
+            Logger.Warn($"Text target not found: {name}", this);
+            return;
+        }
+
+        graphic.color = color;
+    }
+
+    public void SetTextColor(int hash, Color color)
+    {
+        var graphic = GetText<Graphic>(hash);
+        if (graphic == null)
+        {
+            return;
+        }
+
+        graphic.color = color;
+    }
+
+    public void SetTextAlpha(string name, float alpha)
+    {
+        var graphic = GetText<Graphic>(name);
+        if (graphic == null)
+        {
+            Logger.Warn($"Text target not found: {name}", this);
+            return;
+        }
+
+        var color = graphic.color;
+        color.a = Mathf.Clamp01(alpha);
+        graphic.color = color;
+    }
+
+    public void SetTextAlpha(int hash, float alpha)
+    {
+        var graphic = GetText<Graphic>(hash);
+        if (graphic == null)
+        {
+            return;
+        }
+
+        var color = graphic.color;
+        color.a = Mathf.Clamp01(alpha);
+        graphic.color = color;
+    }
+
     public GameObject GetGameObject(string name)
     {
         gameObjectMap.TryGetValue(name, out var node);
@@ -159,6 +279,297 @@ public class MonoItem : MonoBehaviour
     public GameObject GetGameObject(int hash)
     {
         return GetByHash(gameObjectMap, hash);
+    }
+
+    // Image helpers keep common UI setup at the MonoItem layer so views don't need to touch Image directly.
+    public void SetImage(string name, string spriteName)
+    {
+        SetImageInternal(name, null, spriteName, false);
+    }
+
+    public void SetImage(string name, string spriteName, bool preserveAspect, bool setNativeSize)
+    {
+        SetImageInternal(name, null, spriteName, false, preserveAspect, setNativeSize);
+    }
+
+    public void SetImage(string name, string atlasName, string spriteName)
+    {
+        SetImageInternal(name, atlasName, spriteName, true);
+    }
+
+    public void SetImage(string name, string atlasName, string spriteName, bool preserveAspect, bool setNativeSize)
+    {
+        SetImageInternal(name, atlasName, spriteName, true, preserveAspect, setNativeSize);
+    }
+
+    public void SetImage(int hash, string spriteName)
+    {
+        var image = GetImage(hash);
+        if (image == null)
+        {
+            return;
+        }
+
+        SetImage(image.name, spriteName);
+    }
+
+    public void SetImage(int hash, string spriteName, bool preserveAspect, bool setNativeSize)
+    {
+        var image = GetImage(hash);
+        if (image == null)
+        {
+            return;
+        }
+
+        SetImage(image.name, spriteName, preserveAspect, setNativeSize);
+    }
+
+    public void SetImage(int hash, string atlasName, string spriteName)
+    {
+        var image = GetImage(hash);
+        if (image == null)
+        {
+            return;
+        }
+
+        SetImage(image.name, atlasName, spriteName);
+    }
+
+    public void SetImage(int hash, string atlasName, string spriteName, bool preserveAspect, bool setNativeSize)
+    {
+        var image = GetImage(hash);
+        if (image == null)
+        {
+            return;
+        }
+
+        SetImage(image.name, atlasName, spriteName, preserveAspect, setNativeSize);
+    }
+
+    public void SetImagePreserveAspect(string name, bool preserveAspect)
+    {
+        var image = GetImage(name);
+        if (image == null)
+        {
+            Logger.Warn($"Image target not found: {name}", this);
+            return;
+        }
+
+        image.preserveAspect = preserveAspect;
+    }
+
+    public void SetImagePreserveAspect(int hash, bool preserveAspect)
+    {
+        var image = GetImage(hash);
+        if (image == null)
+        {
+            return;
+        }
+
+        image.preserveAspect = preserveAspect;
+    }
+
+    public void SetImageNativeSize(string name)
+    {
+        var image = GetImage(name);
+        if (image == null)
+        {
+            Logger.Warn($"Image target not found: {name}", this);
+            return;
+        }
+
+        if (image.sprite == null)
+        {
+            Logger.Warn($"Image sprite is null, cannot SetNativeSize: {name}", this);
+            return;
+        }
+
+        image.SetNativeSize();
+    }
+
+    public void SetImageNativeSize(int hash)
+    {
+        var image = GetImage(hash);
+        if (image == null)
+        {
+            return;
+        }
+
+        if (image.sprite == null)
+        {
+            Logger.Warn($"Image sprite is null, cannot SetNativeSize by hash: {hash}", this);
+            return;
+        }
+
+        image.SetNativeSize();
+    }
+
+    public void SetImageColor(string name, Color color)
+    {
+        var image = GetImage(name);
+        if (image == null)
+        {
+            Logger.Warn($"Image target not found: {name}", this);
+            return;
+        }
+
+        image.color = color;
+    }
+
+    public void SetImageColor(int hash, Color color)
+    {
+        var image = GetImage(hash);
+        if (image == null)
+        {
+            return;
+        }
+
+        image.color = color;
+    }
+
+    public void SetImageAlpha(string name, float alpha)
+    {
+        var image = GetImage(name);
+        if (image == null)
+        {
+            Logger.Warn($"Image target not found: {name}", this);
+            return;
+        }
+
+        var color = image.color;
+        color.a = Mathf.Clamp01(alpha);
+        image.color = color;
+    }
+
+    public void SetImageAlpha(int hash, float alpha)
+    {
+        var image = GetImage(hash);
+        if (image == null)
+        {
+            return;
+        }
+
+        var color = image.color;
+        color.a = Mathf.Clamp01(alpha);
+        image.color = color;
+    }
+
+    public void SetImageGray(string name, bool isGray)
+    {
+        var image = GetImage(name);
+        if (image == null)
+        {
+            Logger.Warn($"Image target not found: {name}", this);
+            return;
+        }
+
+        SetImageGrayInternal(name, image, isGray);
+    }
+
+    public void SetImageGray(int hash, bool isGray)
+    {
+        var image = GetImage(hash);
+        if (image == null)
+        {
+            return;
+        }
+
+        SetImageGrayInternal(image.name, image, isGray);
+    }
+
+    public void SetTextGray(string name, bool isGray)
+    {
+        var graphic = GetText<Graphic>(name);
+        if (graphic == null)
+        {
+            Logger.Warn($"Text target not found: {name}", this);
+            return;
+        }
+
+        SetTextGrayInternal(name, graphic, isGray);
+    }
+
+    public void SetTextGray(int hash, bool isGray)
+    {
+        var graphic = GetText<Graphic>(hash);
+        if (graphic == null)
+        {
+            return;
+        }
+
+        SetTextGrayInternal(GetGraphicGrayKey(graphic), graphic, isGray);
+    }
+
+    public void SetButtonGray(string name, bool isGray)
+    {
+        var button = GetButton(name);
+        if (button == null)
+        {
+            Logger.Warn($"Button target not found: {name}", this);
+            return;
+        }
+
+        SetButtonGrayInternal(button, isGray);
+    }
+
+    public void SetButtonGray(int hash, bool isGray)
+    {
+        var button = GetButton(hash);
+        if (button == null)
+        {
+            return;
+        }
+
+        SetButtonGrayInternal(button, isGray);
+    }
+
+    public void SetGray(string name, bool isGray)
+    {
+        var button = GetButton(name);
+        if (button != null)
+        {
+            SetButtonGrayInternal(button, isGray);
+            return;
+        }
+
+        var image = GetImage(name);
+        if (image != null)
+        {
+            SetImageGrayInternal(GetGraphicGrayKey(image), image, isGray);
+            return;
+        }
+
+        var graphic = GetText<Graphic>(name);
+        if (graphic != null)
+        {
+            SetTextGrayInternal(GetGraphicGrayKey(graphic), graphic, isGray);
+            return;
+        }
+
+        Logger.Warn($"Gray target not found: {name}", this);
+    }
+
+    public void SetGray(int hash, bool isGray)
+    {
+        var button = GetButton(hash);
+        if (button != null)
+        {
+            SetButtonGrayInternal(button, isGray);
+            return;
+        }
+
+        var image = GetImage(hash);
+        if (image != null)
+        {
+            SetImageGrayInternal(GetGraphicGrayKey(image), image, isGray);
+            return;
+        }
+
+        var graphic = GetText<Graphic>(hash);
+        if (graphic != null)
+        {
+            SetTextGrayInternal(GetGraphicGrayKey(graphic), graphic, isGray);
+        }
     }
 
     public void SetClick(string name, Action callback)
@@ -447,6 +858,226 @@ public class MonoItem : MonoBehaviour
         {
             handler.Dragged += callback;
         }
+    }
+
+    private static void SetTextComponentValue(Component textComponent, string value)
+    {
+        if (textComponent is Text text)
+        {
+            text.text = value;
+            return;
+        }
+
+        var textProperty = textComponent.GetType().GetProperty("text", BindingFlags.Instance | BindingFlags.Public);
+        if (textProperty != null && textProperty.CanWrite && textProperty.PropertyType == typeof(string))
+        {
+            textProperty.SetValue(textComponent, value);
+        }
+    }
+
+    private void SetImageInternal(string imageName, string atlasName, string spriteName, bool isAtlasSprite)
+    {
+        SetImageInternal(imageName, atlasName, spriteName, isAtlasSprite, false, false);
+    }
+
+    private void SetImageInternal(string imageName, string atlasName, string spriteName, bool isAtlasSprite, bool preserveAspect, bool setNativeSize)
+    {
+        var image = GetImage(imageName);
+        if (image == null)
+        {
+            Logger.Warn($"Image target not found: {imageName}", this);
+            return;
+        }
+
+        ReleaseImageBinding(imageName);
+
+        if (isAtlasSprite)
+        {
+            AtlasMgr.I.LoadSpriteFromAtlas(atlasName, spriteName, sprite =>
+            {
+                if (image == null)
+                {
+                    AtlasMgr.I.ReleaseAtlasSprite(atlasName);
+                    return;
+                }
+
+                image.sprite = sprite;
+                image.preserveAspect = preserveAspect;
+                if (setNativeSize && sprite != null)
+                {
+                    image.SetNativeSize();
+                }
+                imageBindings[imageName] = new ImageBinding
+                {
+                    AtlasName = atlasName,
+                    SpriteName = spriteName,
+                    IsAtlasSprite = true,
+                };
+            });
+            return;
+        }
+
+        AtlasMgr.I.LoadBgSprite(spriteName, sprite =>
+        {
+            if (image == null)
+            {
+                AtlasMgr.I.ReleaseBgSprite(spriteName);
+                return;
+            }
+
+            image.sprite = sprite;
+            image.preserveAspect = preserveAspect;
+            if (setNativeSize && sprite != null)
+            {
+                image.SetNativeSize();
+            }
+            imageBindings[imageName] = new ImageBinding
+            {
+                SpriteName = spriteName,
+                IsAtlasSprite = false,
+            };
+        });
+    }
+
+    private void SetImageGrayInternal(string imageName, Image image, bool isGray)
+    {
+        if (!imageMaterialStates.TryGetValue(imageName, out var state) || state == null)
+        {
+            state = new ImageMaterialState
+            {
+                OriginalMaterial = image.material,
+                IsGray = false,
+                RequestVersion = 0,
+            };
+            imageMaterialStates[imageName] = state;
+        }
+
+        state.RequestVersion++;
+        var requestVersion = state.RequestVersion;
+
+        if (isGray)
+        {
+            if (state.IsGray)
+            {
+                return;
+            }
+
+            state.OriginalMaterial = image.material;
+            AtlasMgr.I.LoadGrayMaterial(material =>
+            {
+                if (image == null)
+                {
+                    AtlasMgr.I.ReleaseGrayMaterial();
+                    return;
+                }
+
+                if (!imageMaterialStates.TryGetValue(imageName, out var latestState) || latestState == null || latestState.RequestVersion != requestVersion)
+                {
+                    AtlasMgr.I.ReleaseGrayMaterial();
+                    return;
+                }
+
+                if (material == null)
+                {
+                    return;
+                }
+
+                image.material = material;
+                latestState.IsGray = true;
+            });
+            return;
+        }
+
+        if (!state.IsGray)
+        {
+            return;
+        }
+
+        image.material = state.OriginalMaterial;
+        state.IsGray = false;
+        AtlasMgr.I.ReleaseGrayMaterial();
+    }
+
+    private void SetButtonGrayInternal(Button button, bool isGray)
+    {
+        var graphics = button.GetComponentsInChildren<Graphic>(true);
+        for (var i = 0; i < graphics.Length; i++)
+        {
+            var graphic = graphics[i];
+            if (graphic == null)
+            {
+                continue;
+            }
+
+            switch (graphic)
+            {
+                case Image image:
+                    SetImageGrayInternal(GetGraphicGrayKey(image), image, isGray);
+                    break;
+                default:
+                    SetTextGrayInternal(GetGraphicGrayKey(graphic), graphic, isGray);
+                    break;
+            }
+        }
+    }
+
+    private void SetTextGrayInternal(string textName, Graphic graphic, bool isGray)
+    {
+        if (!textColorStates.TryGetValue(textName, out var state) || state == null)
+        {
+            state = new TextColorState
+            {
+                OriginalColor = graphic.color,
+                IsGray = false,
+            };
+            textColorStates[textName] = state;
+        }
+
+        if (isGray)
+        {
+            if (!state.IsGray)
+            {
+                state.OriginalColor = graphic.color;
+            }
+
+            var color = state.OriginalColor;
+            var gray = color.grayscale;
+            graphic.color = new Color(gray, gray, gray, color.a);
+            state.IsGray = true;
+            return;
+        }
+
+        if (!state.IsGray)
+        {
+            return;
+        }
+
+        graphic.color = state.OriginalColor;
+        state.IsGray = false;
+    }
+
+    private static string GetGraphicGrayKey(Graphic graphic)
+    {
+        return $"{graphic.name}#{graphic.GetInstanceID()}";
+    }
+
+    private void ReleaseImageBinding(string imageName)
+    {
+        if (!imageBindings.TryGetValue(imageName, out var binding) || binding == null)
+        {
+            return;
+        }
+
+        if (binding.IsAtlasSprite)
+        {
+            AtlasMgr.I.ReleaseAtlasSprite(binding.AtlasName);
+        }
+        else
+        {
+            AtlasMgr.I.ReleaseBgSprite(binding.SpriteName);
+        }
+
+        imageBindings.Remove(imageName);
     }
 
     private static T GetByHash<T>(IReadOnlyDictionary<string, T> map, int hash)
