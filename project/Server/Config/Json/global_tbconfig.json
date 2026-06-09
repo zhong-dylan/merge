@@ -1,0 +1,32 @@
+[
+  {
+    "key": "global_notice",
+    "value": "welcome",
+    "desc": "全局公告"
+  },
+  {
+    "key": "default_language",
+    "value": "zh-CN",
+    "desc": "默认语言"
+  },
+  {
+    "key": "maintenance_status",
+    "value": "closed",
+    "desc": "停服状态"
+  },
+  {
+    "key": "init_gold",
+    "value": "500",
+    "desc": "新用户初始金币"
+  },
+  {
+    "key": "init_diamond",
+    "value": "50",
+    "desc": "新用户初始钻石"
+  },
+  {
+    "key": "init_energy",
+    "value": "100",
+    "desc": "新用户初始体力"
+  }
+]

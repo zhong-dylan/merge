@@ -42,6 +42,7 @@ services:
       - "7351:7351"
     volumes:
       - ./nakama.yml:/nakama/data/nakama.yml:ro
+      - ./Config:/nakama/data/modules/runtime/Config:ro
 
 volumes:
   postgres_data:

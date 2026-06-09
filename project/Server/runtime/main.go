@@ -5,7 +5,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/heroiclabs/nakama-common/api"
@@ -15,11 +18,15 @@ import (
 const (
 	playerProfileCollection = "player_profile"
 	playerProfileKey        = "profile"
-	startCurrency           = int64(500)
+	defaultInitGold         = int64(500)
+	defaultInitDiamond      = int64(50)
+	defaultInitEnergy       = int64(100)
 	welcomeNotificationCode = 1001
+	serverConfigDir         = "/nakama/data/modules/runtime/Config/Json"
 )
 
 var usernamePattern = regexp.MustCompile(`^[A-Za-z0-9_-]{3,24}$`)
+var loadedConfigs map[string][]map[string]interface{}
 
 type playerProfile struct {
 	UserID   string `json:"userId"`
@@ -37,6 +44,13 @@ type playerBootstrap struct {
 }
 
 func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, initializer runtime.Initializer) error {
+	tables, err := loadAllConfigs()
+	if err != nil {
+		logger.Error("load luban configs failed: %v", err)
+		return err
+	}
+	loadedConfigs = tables
+
 	if err := ensureBootstrapSchema(db); err != nil {
 		return err
 	}
@@ -49,8 +63,70 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		return err
 	}
 
-	logger.Info("bootstrap runtime loaded")
+	logger.Info("bootstrap runtime loaded, configs ready")
 	return nil
+}
+
+func loadAllConfigs() (map[string][]map[string]interface{}, error) {
+	configs := make(map[string][]map[string]interface{})
+
+	entries, err := os.ReadDir(serverConfigDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return configs, nil
+		}
+		return nil, fmt.Errorf("read config dir %s failed: %w", serverConfigDir, err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+			continue
+		}
+
+		tableName := strings.TrimSuffix(entry.Name(), ".json")
+		fullPath := filepath.Join(serverConfigDir, entry.Name())
+		content, err := os.ReadFile(fullPath)
+		if err != nil {
+			return nil, fmt.Errorf("read config %s failed: %w", fullPath, err)
+		}
+
+		var rows []map[string]interface{}
+		if err := json.Unmarshal(content, &rows); err != nil {
+			return nil, fmt.Errorf("parse config %s failed: %w", fullPath, err)
+		}
+
+		configs[tableName] = rows
+	}
+
+	return configs, nil
+}
+
+func getGlobalConfigInt64(key string, defaultValue int64) int64 {
+	rows, ok := loadedConfigs["global_tbconfig"]
+	if !ok {
+		return defaultValue
+	}
+
+	for _, row := range rows {
+		rawKey, ok := row["key"].(string)
+		if !ok || rawKey != key {
+			continue
+		}
+
+		rawValue, ok := row["value"].(string)
+		if !ok {
+			return defaultValue
+		}
+
+		value, err := strconv.ParseInt(rawValue, 10, 64)
+		if err != nil {
+			return defaultValue
+		}
+
+		return value
+	}
+
+	return defaultValue
 }
 
 func afterAuthenticateCustom(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, out *api.Session, in *api.AuthenticateCustomRequest) error {
@@ -95,11 +171,15 @@ func afterAuthenticateCustom(ctx context.Context, logger runtime.Logger, db *sql
 		return runtime.NewError("failed to save player profile", 13)
 	}
 
+	initGold := getGlobalConfigInt64("init_gold", defaultInitGold)
+	initDiamond := getGlobalConfigInt64("init_diamond", defaultInitDiamond)
+	initEnergy := getGlobalConfigInt64("init_energy", defaultInitEnergy)
+
 	if created {
 		_, _, err = nk.WalletUpdate(ctx, userID, map[string]int64{
-			"gold":    startCurrency,
-			"energy":  startCurrency,
-			"diamond": startCurrency,
+			"gold":    initGold,
+			"energy":  initEnergy,
+			"diamond": initDiamond,
 		}, map[string]interface{}{
 			"reason": "first_login_bootstrap",
 		}, true)
@@ -119,9 +199,9 @@ func afterAuthenticateCustom(ctx context.Context, logger runtime.Logger, db *sql
 		"playerId":   profile.PlayerID,
 		"username":   profile.Username,
 		"firstLogin": created,
-		"gold":       startCurrency,
-		"energy":     startCurrency,
-		"diamond":    startCurrency,
+		"gold":       initGold,
+		"energy":     initEnergy,
+		"diamond":    initDiamond,
 	}, welcomeNotificationCode, "", true)
 	if err != nil {
 		logger.Error("welcome notification failed for %s: %v", userID, err)

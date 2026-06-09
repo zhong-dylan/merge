@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.code-philosophy.luban": "https://gitee.com/focus-creative-games/luban_unity.git",
     "com.heroiclabs.nakama-unity": "https://github.com/heroiclabs/nakama-unity.git?path=/Packages/Nakama#v3.21.1",
     "com.unity.addressables": "1.21.14",
     "com.unity.collab-proxy": "2.12.4",

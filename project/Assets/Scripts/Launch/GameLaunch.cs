@@ -31,8 +31,13 @@ public class GameLaunch : MonoBehaviour
     private void InitManagers()
     {
         _ = TimeMgr.I;
+        _ = PlayerPrefsMgr.I;
+        _ = EventMgr.I;
+        _ = PoolMgr.I;
+        _ = CfgMgr.I;
         _ = ModelMgr.I;
         _ = AssetsMgr.I;
+        _ = AudioMgr.I;
         _ = UIMgr.I;
         _ = PlatformMgr.I;
     }
@@ -47,11 +52,31 @@ public class GameLaunch : MonoBehaviour
         UpdateLoginProgress(0.4f);
         yield return null;
 
-        Logger.Info("Launch step 3/5: load font.", this);
+        Logger.Info("Launch step 3/5: load config.", this);
+        var configLoaded = false;
+        var configFailed = false;
+        string configError = null;
+        yield return CfgMgr.I.LoadAll(
+            () => configLoaded = true,
+            error =>
+            {
+                configError = error;
+                configFailed = true;
+            });
+
+        if (configFailed || !configLoaded)
+        {
+            OnLoginFailed(configError ?? "Config load failed.");
+            yield break;
+        }
+
+        UpdateLoginProgress(0.55f);
+
+        Logger.Info("Launch step 4/5: load font.", this);
         yield return PlatformMgr.I.Platform.DownloadFont(OnFontLoaded, OnLoginFailed);
         UpdateLoginProgress(0.7f);
 
-        Logger.Info("Launch step 4/5: login.", this);
+        Logger.Info("Launch step 5/5: login.", this);
         yield return NakamaModel.I.Login(selectedServer, launchConfig.UserName, OnLoginSuccess, OnLoginFailed);
     }
 
