@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -32,9 +33,36 @@ public class MonoItemEditor : Editor
 
     private static void RefreshNodes(MonoItem monoItem)
     {
+        EnsureAutoTextComponents(monoItem);
         var method = typeof(MonoItem).GetMethod("CollectNodes", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         method?.Invoke(monoItem, null);
         EditorUtility.SetDirty(monoItem);
+    }
+
+    private static void EnsureAutoTextComponents(MonoItem monoItem)
+    {
+        var texts = monoItem.GetComponentsInChildren<TMP_Text>(true);
+        for (var i = 0; i < texts.Length; i++)
+        {
+            var current = texts[i];
+            if (current == null || current.transform == monoItem.transform)
+            {
+                continue;
+            }
+
+            if (current.GetComponentInParent<MonoItem>() != monoItem)
+            {
+                continue;
+            }
+
+            if (current.GetComponent<AutoText>() != null)
+            {
+                continue;
+            }
+
+            Undo.AddComponent<AutoText>(current.gameObject);
+            EditorUtility.SetDirty(current.gameObject);
+        }
     }
 
     private static void DrawMap<T>(string title, IReadOnlyDictionary<string, T> map) where T : Object

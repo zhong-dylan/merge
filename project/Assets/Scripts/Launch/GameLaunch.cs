@@ -41,6 +41,7 @@ public class GameLaunch : MonoBehaviour
         _ = AudioMgr.I;
         _ = UIMgr.I;
         _ = PlatformMgr.I;
+        _ = FontMgr.I;
     }
 
     private System.Collections.IEnumerator LaunchCoroutine(ServerOption selectedServer)
@@ -112,6 +113,7 @@ public class GameLaunch : MonoBehaviour
             return;
         }
 
+        FontMgr.I.RegisterDownloadedFont(font);
         Logger.Success($"Font loaded: {font.name}", this);
     }
 

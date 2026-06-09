@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -108,11 +109,20 @@ public class MonoItem : MonoBehaviour
 
             if (nodeName.StartsWith("txt_", StringComparison.OrdinalIgnoreCase))
             {
-                var text = current.GetComponent("TMP_Text") ?? current.GetComponent("Text");
+                var tmpText = current.GetComponent<TMP_Text>();
+                if (tmpText != null)
+                {
+                    AutoText.EnsureComponent(tmpText);
+                    AddNode(textMap, nodeName, tmpText);
+                    continue;
+                }
+
+                var text = current.GetComponent<Text>();
                 if (text != null)
                 {
                     AddNode(textMap, nodeName, text);
                 }
+
                 continue;
             }
 
@@ -862,9 +872,17 @@ public class MonoItem : MonoBehaviour
 
     private static void SetTextComponentValue(Component textComponent, string value)
     {
+        AutoText.EnsureFont(textComponent);
+
         if (textComponent is Text text)
         {
-            text.text = value;
+            text.text = text.font == null ? string.Empty : value;
+            return;
+        }
+
+        if (textComponent is TMP_Text tmpText)
+        {
+            tmpText.text = tmpText.font == null ? string.Empty : value;
             return;
         }
 
