@@ -876,13 +876,13 @@ public class MonoItem : MonoBehaviour
 
         if (textComponent is Text text)
         {
-            text.text = text.font == null ? string.Empty : value;
+            text.text = value;
             return;
         }
 
         if (textComponent is TMP_Text tmpText)
         {
-            tmpText.text = tmpText.font == null ? string.Empty : value;
+            tmpText.text = value;
             return;
         }
 

@@ -60,10 +60,7 @@ public sealed class AutoText : MonoBehaviour
         if (fontMgr.HasDownloadedFontAsset)
         {
             ApplyFontAsset(fontMgr.DownloadedFontAsset);
-            return;
         }
-
-        fontMgr.EnsureFontAsset(ApplyFontAsset);
     }
 
     public static void EnsureFont(Component textTarget)

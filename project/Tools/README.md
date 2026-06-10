@@ -16,6 +16,9 @@
 - `restart_server.bat` / `restart_server.sh`
   Restart local Nakama server containers from project root.
 
+- `stop_server.bat` / `stop_server.sh`
+  Stop local Nakama server containers from project root.
+
 - Config root:
   `Config/Luban`
 
