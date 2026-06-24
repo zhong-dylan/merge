@@ -3,6 +3,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SERVERCONFIG_JSON_FILE="${SERVERCONFIG_JSON_FILE:-${SCRIPT_DIR}/Config/Json/global_tbconfig.json}"
+SERVERCONFIG_COMPOSE_ENV="${SCRIPT_DIR}/serverconfig/compose.env"
+
+docker_compose() {
+  docker compose --env-file "${SERVERCONFIG_COMPOSE_ENV}" "$@"
+}
 
 ensure_docker_running() {
   if docker info >/dev/null 2>&1; then
@@ -36,5 +42,6 @@ ensure_docker_running
 
 echo "Restarting Nakama and PostgreSQL containers..."
 cd "${SCRIPT_DIR}"
-docker compose down
+"${SCRIPT_DIR}/serverconfig/generate.sh" "${SERVERCONFIG_JSON_FILE}"
+docker_compose down
 "${SCRIPT_DIR}/start.sh"

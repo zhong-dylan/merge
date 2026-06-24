@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 9068902734246802267}
   - component: {fileID: 6200246104311155987}
   - component: {fileID: 7187744833240206160}
+  - component: {fileID: -6230830250555141693}
   m_Layer: 5
   m_Name: txt_progress
   m_TagString: Untagged
@@ -134,6 +135,19 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &-6230830250555141693
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 351676098278854833}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5068ef9b3ba4d49529fa229d00433a1f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  useDownloadedFont: 1
 --- !u!1 &2694492381784495625
 GameObject:
   m_ObjectHideFlags: 0

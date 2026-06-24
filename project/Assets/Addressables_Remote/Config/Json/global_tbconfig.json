@@ -28,5 +28,60 @@
     "key": "init_energy",
     "value": "100",
     "desc": "新用户初始体力"
+  },
+  {
+    "key": "release_version",
+    "value": "101",
+    "desc": "当前发布版本"
+  },
+  {
+    "key": "release_host",
+    "value": "http://127.0.0.1",
+    "desc": "当前发布服务器地址"
+  },
+  {
+    "key": "server_key",
+    "value": "local_socket_server_key_change_me",
+    "desc": "当前客户端连接server key"
+  },
+  {
+    "key": "console_username",
+    "value": "admin",
+    "desc": "当前后台用户名"
+  },
+  {
+    "key": "console_password",
+    "value": "password",
+    "desc": "当前后台密码"
+  },
+  {
+    "key": "session_encryption_key",
+    "value": "local_session_encryption_key_change_me",
+    "desc": "当前会话加密key"
+  },
+  {
+    "key": "session_refresh_encryption_key",
+    "value": "local_refresh_encryption_key_change_me",
+    "desc": "当前刷新会话加密key"
+  },
+  {
+    "key": "runtime_http_key",
+    "value": "local_runtime_http_key_change_me",
+    "desc": "当前运行时http key"
+  },
+  {
+    "key": "database_address",
+    "value": "local:localdb@postgres:5432/nakama",
+    "desc": "当前数据库连接地址"
+  },
+  {
+    "key": "logger_level",
+    "value": "INFO",
+    "desc": "当前日志级别"
+  },
+  {
+    "key": "session_token_expiry_sec",
+    "value": "7200",
+    "desc": "当前会话过期秒数"
   }
 ]

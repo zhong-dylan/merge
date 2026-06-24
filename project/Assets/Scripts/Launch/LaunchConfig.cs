@@ -6,51 +6,51 @@ using UnityEngine;
 public class LaunchConfig : ScriptableObject
 {
     [SerializeField] private bool enableLogger = true;
-    [SerializeField] private string serverKey = "local_socket_server_key_change_me";
     [SerializeField] private string userName = "player_001";
-    [SerializeField] private List<ServerOption> serverOptions = new()
+    [SerializeField] private List<LaunchServerEntry> servers = new()
     {
-        new ServerOption("Local", "http://127.0.0.1:7350"),
-        new ServerOption("LAN", "http://192.168.1.100:7350"),
-        new ServerOption("Production", "https://your-game-server.example.com"),
+        new LaunchServerEntry
+        {
+            modeName = "local",
+            serverAddress = "http://127.0.0.1",
+        },
+        new LaunchServerEntry
+        {
+            modeName = "dev",
+            serverAddress = string.Empty,
+        },
+        new LaunchServerEntry
+        {
+            modeName = "release",
+            serverAddress = string.Empty,
+        },
     };
-    [SerializeField] private int selectedServerIndex;
 
     public bool EnableLogger => enableLogger;
-    public string ServerKey => serverKey;
     public string UserName => userName;
-    public IReadOnlyList<ServerOption> ServerOptions => serverOptions;
-    public int SelectedServerIndex => selectedServerIndex;
-
-    public ServerOption SelectedServer
-    {
-        get
-        {
-            if (serverOptions == null || serverOptions.Count == 0)
-            {
-                return null;
-            }
-
-            var safeIndex = Mathf.Clamp(selectedServerIndex, 0, serverOptions.Count - 1);
-            return serverOptions[safeIndex];
-        }
-    }
-
-    public void SetSelectedServerIndex(int index)
-    {
-        if (serverOptions == null || serverOptions.Count == 0)
-        {
-            selectedServerIndex = 0;
-            return;
-        }
-
-        selectedServerIndex = Mathf.Clamp(index, 0, serverOptions.Count - 1);
-    }
+    public IReadOnlyList<LaunchServerEntry> Servers => servers;
 
     private void OnValidate()
     {
-        SetSelectedServerIndex(selectedServerIndex);
+        if (servers == null || servers.Count == 0)
+        {
+            servers = new List<LaunchServerEntry>
+            {
+                new LaunchServerEntry
+                {
+                    modeName = "local",
+                    serverAddress = "http://127.0.0.1",
+                },
+            };
+        }
     }
+}
+
+[Serializable]
+public class LaunchServerEntry
+{
+    public string modeName;
+    public string serverAddress;
 }
 
 [Serializable]

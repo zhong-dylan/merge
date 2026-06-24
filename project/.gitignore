@@ -1,0 +1,3 @@
+Server/serverconfig/env.local
+Server/serverconfig/env.*.local
+Server/Config/client.config.json

@@ -372,6 +372,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   launchConfig: {fileID: 11400000, guid: 4748aa55f43b4a559b11f0cabcc5e6d7, type: 2}
+  selectedServerIndex: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

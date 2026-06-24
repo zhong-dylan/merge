@@ -1,0 +1,25 @@
+name: ${NAKAMA_NAME}
+
+database:
+  address:
+    - "${DATABASE_ADDRESS}"
+
+logger:
+  level: ${LOGGER_LEVEL}
+
+session:
+  token_expiry_sec: ${SESSION_TOKEN_EXPIRY_SEC}
+  encryption_key: "${SESSION_ENCRYPTION_KEY}"
+  refresh_encryption_key: "${SESSION_REFRESH_ENCRYPTION_KEY}"
+
+socket:
+  server_key: "${SOCKET_SERVER_KEY}"
+  port: ${NAKAMA_HTTP_PORT}
+
+console:
+  port: ${NAKAMA_CONSOLE_PORT}
+  username: "${CONSOLE_USERNAME}"
+  password: "${CONSOLE_PASSWORD}"
+
+runtime:
+  http_key: "${RUNTIME_HTTP_KEY}"

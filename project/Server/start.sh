@@ -8,7 +8,13 @@ LOG_FILE="${LOG_DIR}/nakama-$(date +%Y%m%d-%H%M%S).log"
 NAKAMA_VERSION="3.39.0"
 NAKAMA_IMAGE="heroiclabs/nakama:${NAKAMA_VERSION}"
 PLUGINBUILDER_IMAGE="heroiclabs/nakama-pluginbuilder:${NAKAMA_VERSION}"
+SERVERCONFIG_JSON_FILE="${SERVERCONFIG_JSON_FILE:-${SCRIPT_DIR}/Config/Json/global_tbconfig.json}"
+SERVERCONFIG_COMPOSE_ENV="${SCRIPT_DIR}/serverconfig/compose.env"
 cd "${SCRIPT_DIR}"
+
+docker_compose() {
+  docker compose --env-file "${SERVERCONFIG_COMPOSE_ENV}" "$@"
+}
 
 ensure_docker_running() {
   if docker info >/dev/null 2>&1; then
@@ -42,6 +48,9 @@ ensure_docker_running
 
 mkdir -p "${LOG_DIR}"
 
+echo "Generating server config from ${SERVERCONFIG_JSON_FILE}..."
+"${SCRIPT_DIR}/serverconfig/generate.sh" "${SERVERCONFIG_JSON_FILE}"
+
 ensure_image_present() {
   local image="$1"
 
@@ -59,25 +68,44 @@ ensure_image_present "${NAKAMA_IMAGE}"
 ensure_image_present "${PLUGINBUILDER_IMAGE}"
 
 echo "Starting PostgreSQL..."
-docker compose up -d postgres
+docker_compose up -d postgres
 
 echo "Building Nakama image with local Docker cache..."
-DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose build --pull=false nakama
+DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker_compose build --pull=false nakama
 
 echo "Starting Nakama..."
-docker compose up -d --no-build nakama
+docker_compose up -d --no-build nakama
 
 echo "Services are up:"
-docker compose ps
+docker_compose ps
+
+console_port="$(awk '
+  /^console:/ { in_console=1; next }
+  in_console && /^  port:/ { gsub(/ /, "", $2); print $2; exit }
+' "${SCRIPT_DIR}/nakama.yml")"
+socket_port="$(awk '
+  /^socket:/ { in_socket=1; next }
+  /^console:/ { in_socket=0 }
+  in_socket && /^  port:/ { gsub(/ /, "", $2); print $2; exit }
+' "${SCRIPT_DIR}/nakama.yml")"
+console_username="$(awk '
+  /^console:/ { in_console=1; next }
+  in_console && /^  username:/ { gsub(/"/, "", $2); print $2; exit }
+' "${SCRIPT_DIR}/nakama.yml")"
+console_password="$(awk '
+  /^console:/ { in_console=1; next }
+  in_console && /^  password:/ { gsub(/"/, "", $2); print $2; exit }
+' "${SCRIPT_DIR}/nakama.yml")"
+grpc_port="$(grep '^NAKAMA_GRPC_PORT=' "${SERVERCONFIG_COMPOSE_ENV}" | cut -d '=' -f 2)"
 
 echo "Nakama Console:"
-echo "  URL: http://127.0.0.1:7351"
-echo "  Username: admin"
-echo "  Password: password"
+echo "  URL: http://127.0.0.1:${console_port}"
+echo "  Username: ${console_username}"
+echo "  Password: ${console_password}"
 echo "Game Server:"
-echo "  gRPC: 127.0.0.1:7349"
-echo "  HTTP: http://127.0.0.1:7350"
+echo "  gRPC: 127.0.0.1:${grpc_port}"
+echo "  HTTP: http://127.0.0.1:${socket_port}"
 
 echo "Streaming Nakama logs..."
 echo "Log file: ${LOG_FILE}"
-docker compose logs -f nakama | tee -a "${LOG_FILE}"
+docker_compose logs -f nakama | tee -a "${LOG_FILE}"

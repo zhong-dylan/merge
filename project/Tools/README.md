@@ -19,6 +19,10 @@
 - `stop_server.bat` / `stop_server.sh`
   Stop local Nakama server containers from project root.
 
+- `Server/serverconfig/generate.sh`
+  Generate `Server/nakama.yml` and `Server/serverconfig/compose.env` from `Server/Config/Json/global_tbconfig.json`.
+  Change `release_version` and the related `version_<release>_*` keys in `global.config` to switch release targets.
+
 - Config root:
   `Config/Luban`
 

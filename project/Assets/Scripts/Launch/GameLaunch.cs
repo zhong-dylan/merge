@@ -3,6 +3,7 @@ using UnityEngine;
 public class GameLaunch : MonoBehaviour
 {
     [SerializeField] private LaunchConfig launchConfig;
+    [SerializeField] private int selectedServerIndex;
     private LoginView loginView;
     private bool isLoginViewReady;
 
@@ -15,17 +16,11 @@ public class GameLaunch : MonoBehaviour
         }
 
         Logger.SetEnable(launchConfig.EnableLogger);
-
-        var selectedServer = launchConfig.SelectedServer;
-        if (selectedServer == null)
-        {
-            Logger.Warn("LaunchConfig does not contain any server options.", this);
-            return;
-        }
+        selectedServerIndex = Mathf.Clamp(selectedServerIndex, 0, Mathf.Max(0, launchConfig.Servers.Count - 1));
 
         InitManagers();
         OpenLoginView();
-        StartCoroutine(LaunchCoroutine(selectedServer));
+        StartCoroutine(LaunchCoroutine());
     }
 
     private void InitManagers()
@@ -44,17 +39,12 @@ public class GameLaunch : MonoBehaviour
         _ = FontMgr.I;
     }
 
-    private System.Collections.IEnumerator LaunchCoroutine(ServerOption selectedServer)
+    private System.Collections.IEnumerator LaunchCoroutine()
     {
         Logger.Info("Launch step 1/5: init.", this);
         yield return new WaitUntil(() => isLoginViewReady);
 
-        Logger.Info("Launch step 2/5: get server config.", this);
-        NakamaModel.I.SetServer(selectedServer.DisplayName, selectedServer.Address, launchConfig.ServerKey);
-        UpdateLoginProgress(0.4f);
-        yield return null;
-
-        Logger.Info("Launch step 3/5: load config.", this);
+        Logger.Info("Launch step 2/5: load config.", this);
         var configLoaded = false;
         var configFailed = false;
         string configError = null;
@@ -72,6 +62,26 @@ public class GameLaunch : MonoBehaviour
             yield break;
         }
 
+        Logger.Info("Launch step 3/5: resolve server.", this);
+        var selectedEntry = GetSelectedServerEntry();
+        var releaseConfig = ReleaseServerConfigResolver.ResolveByMode(selectedEntry, CfgMgr.I, out var resolveError);
+        if (releaseConfig == null)
+        {
+            OnLoginFailed(resolveError);
+            yield break;
+        }
+
+        var selectedServer = releaseConfig.ToServerOption();
+        NakamaModel.I.SetServer(
+            releaseConfig.Version,
+            releaseConfig.ServerName,
+            releaseConfig.ServerAddress,
+            releaseConfig.ServerKey,
+            releaseConfig.AdminAddress);
+        var resolvedIp = ReleaseServerConfigResolver.TryExtractGameIp(releaseConfig);
+        Logger.Info(
+            $"Server={selectedEntry?.modeName} version={releaseConfig.Version} ip={resolvedIp} game={releaseConfig.ServerAddress} admin={releaseConfig.AdminAddress}",
+            this);
         UpdateLoginProgress(0.55f);
 
         Logger.Info("Launch step 4/5: load font.", this);
@@ -137,5 +147,17 @@ public class GameLaunch : MonoBehaviour
         {
             currentLoginView.SetProgress(0f);
         }
+    }
+
+    private LaunchServerEntry GetSelectedServerEntry()
+    {
+        var servers = launchConfig?.Servers;
+        if (servers == null || servers.Count == 0)
+        {
+            return null;
+        }
+
+        var safeIndex = Mathf.Clamp(selectedServerIndex, 0, servers.Count - 1);
+        return servers[safeIndex];
     }
 }

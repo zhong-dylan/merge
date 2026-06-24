@@ -1,4 +1,4 @@
-name: nakama1
+name: nakama101
 
 database:
   address:
@@ -14,12 +14,12 @@ session:
 
 socket:
   server_key: "local_socket_server_key_change_me"
-  port: 7350
+  port: 8350
 
 console:
-  port: 7351
-  username: admin
-  password: password
+  port: 8351
+  username: "admin"
+  password: "password"
 
 runtime:
   http_key: "local_runtime_http_key_change_me"

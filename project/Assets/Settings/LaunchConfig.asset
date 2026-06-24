@@ -13,13 +13,11 @@ MonoBehaviour:
   m_Name: LaunchConfig
   m_EditorClassIdentifier: 
   enableLogger: 1
-  serverKey: local_socket_server_key_change_me
-  userName: player_002
-  serverOptions:
-  - displayName: Local
-    address: http://127.0.0.1:7350
-  - displayName: LAN
-    address: http://192.168.1.100:7350
-  - displayName: Production
-    address: https://your-game-server.example.com
-  selectedServerIndex: 0
+  userName: player_001
+  servers:
+  - modeName: local
+    serverAddress: http://127.0.0.1
+  - modeName: dev
+    serverAddress: http://127.0.0.1
+  - modeName: release
+    serverAddress: http://127.0.0.1

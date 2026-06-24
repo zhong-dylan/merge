@@ -7,20 +7,24 @@ public sealed class NakamaModel : ModelBase<NakamaModel>, IModel
 {
     public Client Client { get; private set; }
     public ISession Session { get; private set; }
+    public string ReleaseVersion { get; private set; }
     public string ServerName { get; private set; }
     public string ServerAddress { get; private set; }
     public string ServerKey { get; private set; }
+    public string AdminAddress { get; private set; }
 
     public override void Init()
     {
         Clear();
     }
 
-    public void SetServer(string serverName, string serverAddress, string serverKey)
+    public void SetServer(string releaseVersion, string serverName, string serverAddress, string serverKey, string adminAddress)
     {
+        ReleaseVersion = releaseVersion ?? string.Empty;
         ServerName = serverName ?? string.Empty;
         ServerAddress = serverAddress ?? string.Empty;
         ServerKey = serverKey ?? string.Empty;
+        AdminAddress = adminAddress ?? string.Empty;
     }
 
     public void SetConnection(Client client, ISession session)
@@ -49,7 +53,6 @@ public sealed class NakamaModel : ModelBase<NakamaModel>, IModel
         var client = new Client(serverUri.Scheme, serverUri.Host, serverUri.Port, ServerKey);
         client.Timeout = 10;
 
-        SetServer(selectedServer.DisplayName, selectedServer.Address, ServerKey);
         Logger.Info($"Launching with user '{username}' on server '{selectedServer.DisplayName}' at {selectedServer.Address}");
 
         var authenticateTask = client.AuthenticateCustomAsync(customId, username, true);
@@ -100,9 +103,11 @@ public sealed class NakamaModel : ModelBase<NakamaModel>, IModel
     {
         Client = null;
         Session = null;
+        ReleaseVersion = string.Empty;
         ServerName = string.Empty;
         ServerAddress = string.Empty;
         ServerKey = string.Empty;
+        AdminAddress = string.Empty;
     }
 
     private static string BuildCustomId(string username)

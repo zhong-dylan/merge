@@ -12,7 +12,7 @@ public sealed class CfgMgr : MonoSingle<CfgMgr>
     private static readonly string[] JsonTableKeys =
     {
         "Config/global_tbconfig_remote",
-        "Config/item_tbitem_remote",
+        "Config/items_tbitem_remote",
     };
 
     private readonly Dictionary<string, TextAsset> loadedJsonAssets = new();

@@ -31,15 +31,15 @@ services:
       - "/bin/sh"
       - "-ecx"
       - >
-        /nakama/nakama migrate up --database.address local:localdb@postgres:5432/nakama &&
+        /nakama/nakama migrate up --database.address ${DATABASE_ADDRESS} &&
         exec /nakama/nakama
-        --name nakama1
-        --database.address local:localdb@postgres:5432/nakama
+        --name ${NAKAMA_NAME}
+        --database.address ${DATABASE_ADDRESS}
         --config /nakama/data/nakama.yml
     ports:
-      - "7349:7349"
-      - "7350:7350"
-      - "7351:7351"
+      - "${NAKAMA_GRPC_PORT}:${NAKAMA_GRPC_PORT}"
+      - "${NAKAMA_HTTP_PORT}:${NAKAMA_HTTP_PORT}"
+      - "${NAKAMA_CONSOLE_PORT}:${NAKAMA_CONSOLE_PORT}"
     volumes:
       - ./nakama.yml:/nakama/data/nakama.yml:ro
       - ./Config:/nakama/data/modules/runtime/Config:ro
