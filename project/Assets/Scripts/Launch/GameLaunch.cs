@@ -5,6 +5,11 @@ public class GameLaunch : MonoBehaviour
     [SerializeField] private bool enableLogger = true;
     [SerializeField] private string userName = "player_001";
     [SerializeField] private LaunchServerMode selectedServerMode = LaunchServerMode.Local;
+    [SerializeField] private int serverVersion = 101;
+    [SerializeField] private string localHost = "http://127.0.0.1";
+    [SerializeField] private string devHost = "http://127.0.0.1";
+    [SerializeField] private string releaseHost = "http://127.0.0.1";
+    [SerializeField] private string serverKey = "local_socket_server_key_change_me";
     private UILoginView loginView;
     private bool isLoginViewReady;
 
@@ -56,7 +61,14 @@ public class GameLaunch : MonoBehaviour
         yield return new WaitUntil(() => isLoginViewReady);
 
         Logger.Info("Launch step 3/5: resolve server.", this);
-        var releaseConfig = ReleaseServerConfigResolver.ResolveByMode(selectedServerMode, CfgMgr.I, out var resolveError);
+        var releaseConfig = ReleaseServerConfigResolver.ResolveByMode(
+            selectedServerMode,
+            serverVersion,
+            localHost,
+            devHost,
+            releaseHost,
+            serverKey,
+            out var resolveError);
         if (releaseConfig == null)
         {
             OnLoginFailed(resolveError);

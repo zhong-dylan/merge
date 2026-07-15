@@ -13,15 +13,17 @@
   Server code output: `Server/Gen/LubanGoJson`
   Server data output: `Server/Config/Json`
 
-- `restart_server.bat` / `restart_server.sh`
-  Restart local Nakama server containers from project root.
+- `Server/Tools/switch.sh`
+  Switch the current server config under `Server/releases/`.
 
-- `stop_server.bat` / `stop_server.sh`
-  Stop local Nakama server containers from project root.
-
-- `Server/serverconfig/generate.sh`
-  Generate `Server/nakama.yml` and `Server/serverconfig/compose.env` from `Server/Config/Json/global_tbconfig.json`.
-  Change `release_version` and the related `version_<release>_*` keys in `global.config` to switch release targets.
+- Server runtime scripts live in `Server/Tools/`:
+  - `switch.sh <version>`
+  - `start.sh [version]`
+  - `stop.sh [version]`
+  - `restart.sh [version]`
+  - `logs.sh`
+  - `list.sh`
+  - See `Server/Tools/README.md`.
 
 - Config root:
   `Config/Luban`

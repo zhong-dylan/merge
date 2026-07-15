@@ -374,6 +374,11 @@ MonoBehaviour:
   enableLogger: 1
   userName: player_001
   selectedServerMode: 0
+  serverVersion: 101
+  localHost: http://127.0.0.1
+  devHost: http://127.0.0.1
+  releaseHost: http://127.0.0.1
+  serverKey: local_socket_server_key_change_me
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

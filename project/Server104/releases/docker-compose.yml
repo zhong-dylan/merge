@@ -1,0 +1,31 @@
+services:
+  nakama:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      pull: false
+    container_name: ${NAKAMA_NAME}
+    restart: unless-stopped
+    entrypoint:
+      - "/bin/sh"
+      - "-ecx"
+      - >
+        /nakama/nakama migrate up --database.address ${DATABASE_ADDRESS} &&
+        exec /nakama/nakama
+        --name ${NAKAMA_NAME}
+        --database.address ${DATABASE_ADDRESS}
+        --config /nakama/data/nakama.yml
+    ports:
+      - "${NAKAMA_GRPC_PORT}:${NAKAMA_GRPC_PORT}"
+      - "${NAKAMA_HTTP_PORT}:${NAKAMA_HTTP_PORT}"
+      - "${NAKAMA_CONSOLE_PORT}:${NAKAMA_CONSOLE_PORT}"
+    volumes:
+      - ./nakama.yml:/nakama/data/nakama.yml:ro
+      - ../Config:/nakama/data/modules/runtime/Config:ro
+    networks:
+      - nakama_shared
+
+networks:
+  nakama_shared:
+    external: true
+    name: nakama_shared

@@ -1,0 +1,25 @@
+name: nakama104
+
+database:
+  address:
+    - "local:localdb@postgres:5432/nakama"
+
+logger:
+  level: INFO
+
+session:
+  token_expiry_sec: 7200
+  encryption_key: "local_session_encryption_key_change_me"
+  refresh_encryption_key: "local_refresh_encryption_key_change_me"
+
+socket:
+  server_key: "local_socket_server_key_change_me"
+  port: 8380
+
+console:
+  port: 8381
+  username: "admin"
+  password: "password"
+
+runtime:
+  http_key: "local_runtime_http_key_change_me"

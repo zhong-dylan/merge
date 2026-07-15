@@ -1,0 +1,12 @@
+{
+  "env": "local",
+  "version": "0.1.0",
+  "serverKey": "local_socket_server_key_change_me",
+  "defaultUserName": "player_001",
+  "servers": [
+    {
+      "displayName": "Local",
+      "address": "http://127.0.0.1:7350"
+    }
+  ]
+}
