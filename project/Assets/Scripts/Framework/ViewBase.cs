@@ -126,10 +126,11 @@ public class ViewBase : MonoItem
         {
             rectTransform.localScale = Vector3.one;
             rectTransform.localPosition = Vector3.zero;
-            rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
-            rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
             rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            rectTransform.sizeDelta = UIConst.DesignResolution;
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
             rectTransform.anchoredPosition = Vector2.zero;
         }
 
@@ -138,14 +139,12 @@ public class ViewBase : MonoItem
         {
             return;
         }
-
         context.localScale = Vector3.one;
         context.localPosition = Vector3.zero;
-        context.anchorMin = Vector2.zero;
-        context.anchorMax = Vector2.one;
+        context.anchorMin = new Vector2(0.5f, 0.5f);
+        context.anchorMax = new Vector2(0.5f, 0.5f);
         context.pivot = new Vector2(0.5f, 0.5f);
-        context.offsetMin = Vector2.zero;
-        context.offsetMax = Vector2.zero;
+        context.sizeDelta = Vector2.zero;
         context.anchoredPosition = Vector2.zero;
     }
 
