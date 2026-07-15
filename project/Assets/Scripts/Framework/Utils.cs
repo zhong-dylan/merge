@@ -1204,13 +1204,19 @@ public static class Utils
             return;
         }
 
+        if (!AtlasMgr.TryGet(out var atlasMgr))
+        {
+            state.ImageBindings.Remove(imageName);
+            return;
+        }
+
         if (binding.IsAtlasSprite)
         {
-            AtlasMgr.I.ReleaseAtlasSprite(binding.AtlasName);
+            atlasMgr.ReleaseAtlasSprite(binding.AtlasName);
         }
         else
         {
-            AtlasMgr.I.ReleaseBgSprite(binding.SpriteName);
+            atlasMgr.ReleaseBgSprite(binding.SpriteName);
         }
 
         state.ImageBindings.Remove(imageName);

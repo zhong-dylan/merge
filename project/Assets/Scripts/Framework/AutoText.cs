@@ -24,6 +24,11 @@ public sealed class AutoText : MonoBehaviour
     private void OnEnable()
     {
         CacheComponent();
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+
         FontMgr.I.FontAssetChanged += OnFontAssetChanged;
         ApplyDownloadedFontIfNeeded();
     }
@@ -40,12 +45,11 @@ public sealed class AutoText : MonoBehaviour
     private void OnValidate()
     {
         CacheComponent();
-        ApplyDownloadedFontIfNeeded();
     }
 
     public void ApplyDownloadedFontIfNeeded()
     {
-        if (!useDownloadedFont)
+        if (!Application.isPlaying || !useDownloadedFont)
         {
             return;
         }
@@ -57,7 +61,7 @@ public sealed class AutoText : MonoBehaviour
         }
 
         var fontMgr = FontMgr.I;
-        if (fontMgr.HasDownloadedFontAsset)
+        if (fontMgr != null && fontMgr.HasDownloadedFontAsset)
         {
             ApplyFontAsset(fontMgr.DownloadedFontAsset);
         }

@@ -53,12 +53,19 @@ public class ViewBase : MonoItem
 
     protected virtual void OnDisable()
     {
-        if (Application.isPlaying && UIMgr.I != null)
+        if (Application.isPlaying)
         {
             StopAutoClose();
             OnRemoveEvent();
-            TimeMgr.I.RemoveUpdate(HandleUpdate);
-            UIMgr.I.UnregisterView(this);
+            if (TimeMgr.TryGet(out var timeMgr))
+            {
+                timeMgr.RemoveUpdate(HandleUpdate);
+            }
+
+            if (UIMgr.TryGet(out var uiMgr))
+            {
+                uiMgr.UnregisterView(this);
+            }
         }
     }
 
@@ -66,9 +73,9 @@ public class ViewBase : MonoItem
     {
         base.OnDestroy();
         StopAutoClose();
-        if (Application.isPlaying)
+        if (Application.isPlaying && TimeMgr.TryGet(out var timeMgr))
         {
-            TimeMgr.I.RemoveUpdate(HandleUpdate);
+            timeMgr.RemoveUpdate(HandleUpdate);
         }
 
         OnDestory();
@@ -196,7 +203,10 @@ public class ViewBase : MonoItem
             return;
         }
 
-        TimeMgr.I.StopManagedCoroutine(autoCloseCoroutine);
+        if (TimeMgr.TryGet(out var timeMgr))
+        {
+            timeMgr.StopManagedCoroutine(autoCloseCoroutine);
+        }
         autoCloseCoroutine = null;
     }
 
@@ -208,6 +218,9 @@ public class ViewBase : MonoItem
             return;
         }
 
-        UIMgr.I.CloseView(this);
+        if (UIMgr.TryGet(out var uiMgr))
+        {
+            uiMgr.CloseView(this);
+        }
     }
 }

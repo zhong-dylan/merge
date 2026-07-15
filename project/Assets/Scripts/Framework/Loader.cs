@@ -15,6 +15,9 @@ public class Loader : MonoBehaviour
 
     private void OnDestroy()
     {
-        AssetsMgr.I.ReleaseAll(this);
+        if (AssetsMgr.TryGet(out var assetsMgr))
+        {
+            assetsMgr.ReleaseAll(this);
+        }
     }
 }

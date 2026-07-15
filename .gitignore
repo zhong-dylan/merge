@@ -6,3 +6,4 @@ project/Temp
 *.csproj
 *.sln
 project/Server/logs
+project/Config/Luban/Datas/.~#items.item.xlsx

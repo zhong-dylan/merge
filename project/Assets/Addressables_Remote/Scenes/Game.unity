@@ -371,8 +371,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26abdcf88e51b40eda88ef62906a5bb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  launchConfig: {fileID: 11400000, guid: 4748aa55f43b4a559b11f0cabcc5e6d7, type: 2}
-  selectedServerIndex: 0
+  enableLogger: 1
+  userName: player_001
+  selectedServerMode: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

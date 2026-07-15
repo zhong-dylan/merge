@@ -9,9 +9,11 @@ public abstract class MonoSingle<T> : MonoBehaviour where T : MonoSingle<T>
     {
         get
         {
-            if (instance == null)
+            TryGet(out instance);
+
+            if (instance == null && !Application.isPlaying)
             {
-                instance = FindFirstObjectByType<T>();
+                return null;
             }
 
             if (instance == null)
@@ -25,6 +27,17 @@ public abstract class MonoSingle<T> : MonoBehaviour where T : MonoSingle<T>
         }
     }
 
+    public static bool TryGet(out T value)
+    {
+        if (instance == null)
+        {
+            instance = FindFirstObjectByType<T>();
+        }
+
+        value = instance;
+        return value != null;
+    }
+
     protected virtual void Awake()
     {
         if (instance != null && instance != this)
@@ -34,7 +47,10 @@ public abstract class MonoSingle<T> : MonoBehaviour where T : MonoSingle<T>
         }
 
         instance = (T)this;
-        DontDestroyOnLoad(gameObject);
+        if (Application.isPlaying)
+        {
+            DontDestroyOnLoad(gameObject);
+        }
         TryInit();
     }
 
