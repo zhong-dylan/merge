@@ -2,24 +2,16 @@ using UnityEngine;
 
 public class GameLaunch : MonoBehaviour
 {
-    [SerializeField] private LaunchConfig launchConfig;
-    [SerializeField] private int selectedServerIndex;
+    [SerializeField] private bool enableLogger = true;
+    [SerializeField] private string userName = "player_001";
+    [SerializeField] private LaunchServerMode selectedServerMode = LaunchServerMode.Local;
     private UILoginView loginView;
     private bool isLoginViewReady;
 
     private void Start()
     {
-        if (launchConfig == null)
-        {
-            Logger.Warn("LaunchConfig is not assigned.", this);
-            return;
-        }
-
-        Logger.SetEnable(launchConfig.EnableLogger);
-        selectedServerIndex = Mathf.Clamp(selectedServerIndex, 0, Mathf.Max(0, launchConfig.Servers.Count - 1));
-
+        Logger.SetEnable(enableLogger);
         InitManagers();
-        OpenLoginView();
         StartCoroutine(LaunchCoroutine());
     }
 
@@ -41,10 +33,7 @@ public class GameLaunch : MonoBehaviour
 
     private System.Collections.IEnumerator LaunchCoroutine()
     {
-        Logger.Info("Launch step 1/5: init.", this);
-        yield return new WaitUntil(() => isLoginViewReady);
-
-        Logger.Info("Launch step 2/5: load config.", this);
+        Logger.Info("Launch step 1/5: load config.", this);
         var configLoaded = false;
         var configFailed = false;
         string configError = null;
@@ -62,9 +51,12 @@ public class GameLaunch : MonoBehaviour
             yield break;
         }
 
+        Logger.Info("Launch step 2/5: init login view.", this);
+        OpenLoginView();
+        yield return new WaitUntil(() => isLoginViewReady);
+
         Logger.Info("Launch step 3/5: resolve server.", this);
-        var selectedEntry = GetSelectedServerEntry();
-        var releaseConfig = ReleaseServerConfigResolver.ResolveByMode(selectedEntry, CfgMgr.I, out var resolveError);
+        var releaseConfig = ReleaseServerConfigResolver.ResolveByMode(selectedServerMode, CfgMgr.I, out var resolveError);
         if (releaseConfig == null)
         {
             OnLoginFailed(resolveError);
@@ -80,7 +72,7 @@ public class GameLaunch : MonoBehaviour
             releaseConfig.AdminAddress);
         var resolvedIp = ReleaseServerConfigResolver.TryExtractGameIp(releaseConfig);
         Logger.Info(
-            $"Server={selectedEntry?.modeName} version={releaseConfig.Version} ip={resolvedIp} game={releaseConfig.ServerAddress} admin={releaseConfig.AdminAddress}",
+            $"Server={selectedServerMode} version={releaseConfig.Version} ip={resolvedIp} game={releaseConfig.ServerAddress} admin={releaseConfig.AdminAddress}",
             this);
         UpdateLoginProgress(0.55f);
 
@@ -89,7 +81,7 @@ public class GameLaunch : MonoBehaviour
         UpdateLoginProgress(0.7f);
 
         Logger.Info("Launch step 5/5: login.", this);
-        yield return NakamaModel.I.Login(selectedServer, launchConfig.UserName, OnLoginSuccess, OnLoginFailed);
+        yield return NakamaModel.I.Login(selectedServer, userName, OnLoginSuccess, OnLoginFailed);
     }
 
     private void OpenLoginView()
@@ -147,17 +139,5 @@ public class GameLaunch : MonoBehaviour
         {
             currentLoginView.SetProgress(0f);
         }
-    }
-
-    private LaunchServerEntry GetSelectedServerEntry()
-    {
-        var servers = launchConfig?.Servers;
-        if (servers == null || servers.Count == 0)
-        {
-            return null;
-        }
-
-        var safeIndex = Mathf.Clamp(selectedServerIndex, 0, servers.Count - 1);
-        return servers[safeIndex];
     }
 }

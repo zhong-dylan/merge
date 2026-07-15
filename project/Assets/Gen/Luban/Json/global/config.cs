@@ -19,7 +19,6 @@ public sealed partial class config : Luban.BeanBase
     {
         { if(!_buf["key"].IsString) { throw new SerializationException(); }  Key = _buf["key"]; }
         { if(!_buf["value"].IsString) { throw new SerializationException(); }  Value = _buf["value"]; }
-        { if(!_buf["desc"].IsString) { throw new SerializationException(); }  Desc = _buf["desc"]; }
     }
 
     public static config Deserializeconfig(JSONNode _buf)
@@ -35,10 +34,6 @@ public sealed partial class config : Luban.BeanBase
     /// 配置值
     /// </summary>
     public readonly string Value;
-    /// <summary>
-    /// 描述
-    /// </summary>
-    public readonly string Desc;
    
     public const int __ID__ = 2054903789;
     public override int GetTypeId() => __ID__;
@@ -52,7 +47,6 @@ public sealed partial class config : Luban.BeanBase
         return "{ "
         + "key:" + Key + ","
         + "value:" + Value + ","
-        + "desc:" + Desc + ","
         + "}";
     }
 }

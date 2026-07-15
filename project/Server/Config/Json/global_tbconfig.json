@@ -1,87 +1,78 @@
 [
   {
     "key": "global_notice",
-    "value": "welcome",
-    "desc": "全局公告"
+    "value": "welcome"
   },
   {
     "key": "default_language",
-    "value": "zh-CN",
-    "desc": "默认语言"
+    "value": "zh-CN"
   },
   {
     "key": "maintenance_status",
-    "value": "closed",
-    "desc": "停服状态"
+    "value": "closed"
   },
   {
     "key": "init_gold",
-    "value": "500",
-    "desc": "新用户初始金币"
+    "value": "500"
   },
   {
     "key": "init_diamond",
-    "value": "50",
-    "desc": "新用户初始钻石"
+    "value": "50"
   },
   {
     "key": "init_energy",
-    "value": "100",
-    "desc": "新用户初始体力"
+    "value": "100"
   },
   {
     "key": "release_version",
-    "value": "101",
-    "desc": "当前发布版本"
+    "value": "101"
+  },
+  {
+    "key": "local_host",
+    "value": "http://127.0.0.1"
+  },
+  {
+    "key": "dev_host",
+    "value": "http://127.0.0.1"
   },
   {
     "key": "release_host",
-    "value": "http://127.0.0.1",
-    "desc": "当前发布服务器URL"
+    "value": "http://127.0.0.1"
   },
   {
     "key": "server_key",
-    "value": "local_socket_server_key_change_me",
-    "desc": "当前客户端连接server key"
+    "value": "local_socket_server_key_change_me"
   },
   {
     "key": "console_username",
-    "value": "admin",
-    "desc": "当前后台用户名"
+    "value": "admin"
   },
   {
     "key": "console_password",
-    "value": "password",
-    "desc": "当前后台密码"
+    "value": "password"
   },
   {
     "key": "session_encryption_key",
-    "value": "local_session_encryption_key_change_me",
-    "desc": "当前会话加密key"
+    "value": "local_session_encryption_key_change_me"
   },
   {
     "key": "session_refresh_encryption_key",
-    "value": "local_refresh_encryption_key_change_me",
-    "desc": "当前刷新会话加密key"
+    "value": "local_refresh_encryption_key_change_me"
   },
   {
     "key": "runtime_http_key",
-    "value": "local_runtime_http_key_change_me",
-    "desc": "当前运行时http key"
+    "value": "local_runtime_http_key_change_me"
   },
   {
     "key": "database_address",
-    "value": "local:localdb@postgres:5432/nakama",
-    "desc": "当前数据库连接地址"
+    "value": "local:localdb@postgres:5432/nakama"
   },
   {
     "key": "logger_level",
-    "value": "INFO",
-    "desc": "当前日志级别"
+    "value": "INFO"
   },
   {
     "key": "session_token_expiry_sec",
-    "value": "7200",
-    "desc": "当前会话过期秒数"
+    "value": "7200"
   }
 ]

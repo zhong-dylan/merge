@@ -15,7 +15,6 @@ import "errors"
 type Globalconfig struct {
     Key string // 配置Key 
     Value string // 配置值 
-    Desc string // 描述 
 }
 
 const TypeId_Globalconfig = 2054903789
@@ -28,7 +27,6 @@ func NewGlobalconfig(_buf map[string]interface{}) (_v *Globalconfig, err error) 
     _v = &Globalconfig{}
     { var _ok_ bool; var __json_key__ interface{}; if __json_key__, _ok_ = _buf["key"]; !_ok_ || __json_key__ == nil { err = errors.New("key error"); return } else { var __x__ string;  {  if __x__, _ok_ = __json_key__.(string); !_ok_ { err = errors.New("__x__ error"); return } }; _v.Key = __x__ }}
     { var _ok_ bool; var __json_value__ interface{}; if __json_value__, _ok_ = _buf["value"]; !_ok_ || __json_value__ == nil { err = errors.New("value error"); return } else { var __x__ string;  {  if __x__, _ok_ = __json_value__.(string); !_ok_ { err = errors.New("__x__ error"); return } }; _v.Value = __x__ }}
-    { var _ok_ bool; var __json_desc__ interface{}; if __json_desc__, _ok_ = _buf["desc"]; !_ok_ || __json_desc__ == nil { err = errors.New("desc error"); return } else { var __x__ string;  {  if __x__, _ok_ = __json_desc__.(string); !_ok_ { err = errors.New("__x__ error"); return } }; _v.Desc = __x__ }}
     return
 }
 
