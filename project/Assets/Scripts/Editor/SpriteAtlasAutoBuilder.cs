@@ -22,13 +22,13 @@ public static class SpriteAtlasAutoBuilder
     {
         new()
         {
-            SourceRoot = "Assets/Arts/Atlas_Local",
+            SourceRoot = "Assets/Aarts/Atlas_Local",
             OutputRoot = "Assets/Addressables_Local/Atlas",
             IncludeInBuild = true,
         },
         new()
         {
-            SourceRoot = "Assets/Arts/Atlas_Remote",
+            SourceRoot = "Assets/Aarts/Atlas_Remote",
             OutputRoot = "Assets/Addressables_Remote/Atlas",
             IncludeInBuild = false,
         },

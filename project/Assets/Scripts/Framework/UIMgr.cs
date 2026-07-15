@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 public sealed class UIMgr : MonoSingle<UIMgr>
 {
+    private const int ViewSortingOrderInterval = 100;
+
     private readonly Dictionary<UILayer, RectTransform> layerRoots = new();
     private readonly Dictionary<UILayer, List<ViewBase>> layerViews = new();
     private readonly Dictionary<Type, ViewBase> openedViews = new();
@@ -79,7 +81,7 @@ public sealed class UIMgr : MonoSingle<UIMgr>
         RefreshLayerOrders(view.Layer);
     }
 
-    public void OpenView<T>(UILayer layer, Action<T> onLoaded = null) where T : ViewBase
+    public void OpenView<T>(Action<T> onLoaded = null) where T : ViewBase
     {
         var existingView = GetView<T>();
         if (existingView != null)
@@ -108,6 +110,8 @@ public sealed class UIMgr : MonoSingle<UIMgr>
                 return;
             }
 
+            var prefabView = prefab.GetComponent<T>();
+            var layer = prefabView != null ? prefabView.Layer : UILayer.Main;
             EnsureLayer(layer);
 
             var instance = Instantiate(prefab, layerRoots[layer], false);
@@ -117,7 +121,6 @@ public sealed class UIMgr : MonoSingle<UIMgr>
                 view = instance.AddComponent<T>();
             }
 
-            view.SetLayer(layer);
             openedViews[typeof(T)] = view;
             RegisterView(view);
             onLoaded?.Invoke(view);
@@ -249,10 +252,10 @@ public sealed class UIMgr : MonoSingle<UIMgr>
 
     private void EnsureDefaultLayers()
     {
-        EnsureLayer(UILayer.Game);
-        EnsureLayer(UILayer.Main);
-        EnsureLayer(UILayer.Login);
-        EnsureLayer(UILayer.Pop);
+        foreach (UILayer layer in Enum.GetValues(typeof(UILayer)))
+        {
+            EnsureLayer(layer);
+        }
     }
 
     private void EnsureLayer(UILayer layer)
@@ -299,7 +302,6 @@ public sealed class UIMgr : MonoSingle<UIMgr>
         }
 
         uiCamera = ResolveUICamera();
-        var sortingBase = (int)layer;
 
         for (var i = views.Count - 1; i >= 0; i--)
         {
@@ -311,7 +313,7 @@ public sealed class UIMgr : MonoSingle<UIMgr>
 
         for (var i = 0; i < views.Count; i++)
         {
-            views[i].ApplyCanvas(sortingBase + i, uiCamera);
+            views[i].ApplyCanvas(layer, i * ViewSortingOrderInterval, uiCamera);
         }
     }
 

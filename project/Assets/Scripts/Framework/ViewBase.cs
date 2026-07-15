@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,7 +13,7 @@ public class ViewBase : MonoItem
     private Coroutine autoCloseCoroutine;
     private bool isInited;
 
-    public UILayer Layer => layer;
+    public UILayer Layer => Enum.IsDefined(typeof(UILayer), layer) ? layer : UILayer.Main;
     public Canvas Canvas => canvas;
     public virtual string PrefabPath => string.Empty;
     protected virtual bool EnableAutoClose => true;
@@ -22,8 +23,11 @@ public class ViewBase : MonoItem
     {
         base.Awake();
         ApplyLayout();
-        EnsureCanvas();
-        TryInit();
+        if (Application.isPlaying)
+        {
+            EnsureCanvas();
+            TryInit();
+        }
     }
 
     protected virtual void Reset()
@@ -75,7 +79,7 @@ public class ViewBase : MonoItem
         layer = targetLayer;
     }
 
-    public void ApplyCanvas(int sortingOrder, Camera targetCamera)
+    public void ApplyCanvas(UILayer sortingLayer, int sortingOrder, Camera targetCamera)
     {
         EnsureCanvas();
 
@@ -83,6 +87,7 @@ public class ViewBase : MonoItem
         canvas.worldCamera = targetCamera;
         canvas.planeDistance = 100f;
         canvas.overrideSorting = true;
+        canvas.sortingLayerName = sortingLayer.ToString();
         canvas.sortingOrder = sortingOrder;
     }
 

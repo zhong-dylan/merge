@@ -4,7 +4,7 @@ public class GameLaunch : MonoBehaviour
 {
     [SerializeField] private LaunchConfig launchConfig;
     [SerializeField] private int selectedServerIndex;
-    private LoginView loginView;
+    private UILoginView loginView;
     private bool isLoginViewReady;
 
     private void Start()
@@ -96,14 +96,14 @@ public class GameLaunch : MonoBehaviour
     {
         isLoginViewReady = false;
 
-        UIMgr.I.OpenView<LoginView>(UILayer.Login, view =>
+        UIMgr.I.OpenView<UILoginView>(view =>
         {
             loginView = view;
             isLoginViewReady = true;
 
             if (view == null)
             {
-                Logger.Warn($"Login view not found in Addressables: {nameof(LoginView)}", this);
+                Logger.Warn($"Login view not found in Addressables: {nameof(UILoginView)}", this);
                 return;
             }
 
@@ -129,7 +129,7 @@ public class GameLaunch : MonoBehaviour
 
     private void UpdateLoginProgress(float progress)
     {
-        var currentLoginView = loginView ?? UIMgr.I.GetView<LoginView>();
+        var currentLoginView = loginView ?? UIMgr.I.GetView<UILoginView>();
         if (currentLoginView == null)
         {
             return;
@@ -142,7 +142,7 @@ public class GameLaunch : MonoBehaviour
     {
         Logger.Error(error, this);
 
-        var currentLoginView = loginView ?? UIMgr.I.GetView<LoginView>();
+        var currentLoginView = loginView ?? UIMgr.I.GetView<UILoginView>();
         if (currentLoginView != null)
         {
             currentLoginView.SetProgress(0f);

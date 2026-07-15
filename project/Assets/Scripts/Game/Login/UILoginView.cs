@@ -1,4 +1,4 @@
-public class LoginView : ViewBase
+public class UILoginView : ViewBase
 {
     private const string ImgProgress = "img_progress";
     private ProgressAnimator progressAnimator;
@@ -9,7 +9,7 @@ public class LoginView : ViewBase
     protected override void OnInit()
     {
         base.OnInit();
-        progressAnimator = GetImage(ImgProgress)?.GetComponent<ProgressAnimator>();
+        progressAnimator = Utils.GetImage(this, ImgProgress)?.GetComponent<ProgressAnimator>();
         progressAnimator?.SetProgress(0f, true);
     }
 
