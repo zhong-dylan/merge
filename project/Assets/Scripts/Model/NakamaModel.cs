@@ -60,7 +60,7 @@ public sealed class NakamaModel : ModelBase<NakamaModel>, IModel
 
         if (authenticateTask.IsFaulted)
         {
-            onFailed?.Invoke($"Nakama login failed: {authenticateTask.Exception}");
+            onFailed?.Invoke(FormatNakamaFailure("Nakama login failed", authenticateTask.Exception));
             yield break;
         }
 
@@ -77,7 +77,7 @@ public sealed class NakamaModel : ModelBase<NakamaModel>, IModel
 
         if (rpcTask.IsFaulted)
         {
-            onFailed?.Invoke($"Nakama bootstrap RPC failed: {rpcTask.Exception}");
+            onFailed?.Invoke(FormatNakamaFailure("Nakama bootstrap RPC failed", rpcTask.Exception));
             yield break;
         }
 
@@ -130,5 +130,81 @@ public sealed class NakamaModel : ModelBase<NakamaModel>, IModel
         }
 
         return $"user-{sanitized}";
+    }
+
+    private string FormatNakamaFailure(string prefix, Exception exception)
+    {
+        if (TryGetApiResponseException(exception, out var apiResponseException)
+            && apiResponseException.GrpcStatusCode == ErrorCode.ServerVersionDowngradeForbidden)
+        {
+            return $"账号已进入过更高版本服务器，禁止回到低版本服务器。当前尝试连接版本={ReleaseVersion}, Server={ServerName}, Address={ServerAddress}, ErrorCode={apiResponseException.GrpcStatusCode}";
+        }
+
+        var detail = ExtractExceptionMessage(exception);
+        return string.IsNullOrWhiteSpace(detail)
+            ? $"{prefix}: unknown error."
+            : $"{prefix}: {detail}";
+    }
+
+    private static bool TryGetApiResponseException(Exception exception, out ApiResponseException apiResponseException)
+    {
+        apiResponseException = null;
+        if (exception == null)
+        {
+            return false;
+        }
+
+        if (exception is ApiResponseException currentApiResponseException)
+        {
+            apiResponseException = currentApiResponseException;
+            return true;
+        }
+
+        if (exception is AggregateException aggregateException)
+        {
+            aggregateException = aggregateException.Flatten();
+            for (var i = 0; i < aggregateException.InnerExceptions.Count; i++)
+            {
+                if (TryGetApiResponseException(aggregateException.InnerExceptions[i], out apiResponseException))
+                {
+                    return true;
+                }
+            }
+        }
+
+        if (exception.InnerException != null)
+        {
+            return TryGetApiResponseException(exception.InnerException, out apiResponseException);
+        }
+
+        return false;
+    }
+
+    private static string ExtractExceptionMessage(Exception exception)
+    {
+        if (exception == null)
+        {
+            return string.Empty;
+        }
+
+        if (exception is AggregateException aggregateException)
+        {
+            aggregateException = aggregateException.Flatten();
+            for (var i = 0; i < aggregateException.InnerExceptions.Count; i++)
+            {
+                var message = ExtractExceptionMessage(aggregateException.InnerExceptions[i]);
+                if (!string.IsNullOrWhiteSpace(message))
+                {
+                    return message;
+                }
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(exception.Message))
+        {
+            return exception.Message;
+        }
+
+        return exception.ToString();
     }
 }

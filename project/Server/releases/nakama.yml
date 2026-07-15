@@ -14,10 +14,10 @@ session:
 
 socket:
   server_key: "local_socket_server_key_change_me"
-  port: 8350
+  port: 7350
 
 console:
-  port: 8351
+  port: 7351
   username: "admin"
   password: "password"
 

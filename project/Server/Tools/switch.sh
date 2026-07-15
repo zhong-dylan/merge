@@ -112,10 +112,10 @@ session:
 
 socket:
   server_key: "${SOCKET_SERVER_KEY}"
-  port: ${NAKAMA_HTTP_PORT}
+  port: 7350
 
 console:
-  port: ${NAKAMA_CONSOLE_PORT}
+  port: 7351
   username: "${CONSOLE_USERNAME}"
   password: "${CONSOLE_PASSWORD}"
 
@@ -141,6 +141,8 @@ services:
       pull: false
     container_name: ${NAKAMA_NAME}
     restart: unless-stopped
+    environment:
+      RELEASE_VERSION: ${RELEASE_VERSION}
     entrypoint:
       - "/bin/sh"
       - "-ecx"
@@ -151,9 +153,9 @@ services:
         --database.address ${DATABASE_ADDRESS}
         --config /nakama/data/nakama.yml
     ports:
-      - "${NAKAMA_GRPC_PORT}:${NAKAMA_GRPC_PORT}"
-      - "${NAKAMA_HTTP_PORT}:${NAKAMA_HTTP_PORT}"
-      - "${NAKAMA_CONSOLE_PORT}:${NAKAMA_CONSOLE_PORT}"
+      - "${NAKAMA_GRPC_PORT}:7349"
+      - "${NAKAMA_HTTP_PORT}:7350"
+      - "${NAKAMA_CONSOLE_PORT}:7351"
     volumes:
       - ./nakama.yml:/nakama/data/nakama.yml:ro
       - ../Config:/nakama/data/modules/runtime/Config:ro

@@ -27,11 +27,13 @@ const (
 
 var usernamePattern = regexp.MustCompile(`^[A-Za-z0-9_-]{3,24}$`)
 var loadedConfigs map[string][]map[string]interface{}
+var currentServerVersion int
 
 type playerProfile struct {
-	UserID   string `json:"userId"`
-	PlayerID string `json:"playerId"`
-	Username string `json:"username"`
+	UserID           string `json:"userId"`
+	PlayerID         string `json:"playerId"`
+	Username         string `json:"username"`
+	MaxServerVersion int    `json:"maxServerVersion"`
 }
 
 type playerBootstrap struct {
@@ -44,6 +46,13 @@ type playerBootstrap struct {
 }
 
 func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, initializer runtime.Initializer) error {
+	version, err := readServerVersion()
+	if err != nil {
+		logger.Error("read server version failed: %v", err)
+		return err
+	}
+	currentServerVersion = version
+
 	tables, err := loadAllConfigs()
 	if err != nil {
 		logger.Error("load luban configs failed: %v", err)
@@ -63,8 +72,22 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		return err
 	}
 
-	logger.Info("bootstrap runtime loaded, configs ready")
+	logger.Info("bootstrap runtime loaded, configs ready, serverVersion=%d", currentServerVersion)
 	return nil
+}
+
+func readServerVersion() (int, error) {
+	rawVersion := strings.TrimSpace(os.Getenv("RELEASE_VERSION"))
+	if rawVersion == "" {
+		return 0, fmt.Errorf("RELEASE_VERSION is empty")
+	}
+
+	version, err := strconv.Atoi(rawVersion)
+	if err != nil || version <= 0 {
+		return 0, fmt.Errorf("RELEASE_VERSION must be a positive integer: %s", rawVersion)
+	}
+
+	return version, nil
 }
 
 func loadAllConfigs() (map[string][]map[string]interface{}, error) {
@@ -144,6 +167,24 @@ func afterAuthenticateCustom(ctx context.Context, logger runtime.Logger, db *sql
 	if err != nil {
 		logger.Error("ensure player profile failed: %v", err)
 		return runtime.NewError("failed to initialize player profile", 13)
+	}
+
+	if profile.MaxServerVersion > currentServerVersion {
+		logger.Warn(
+			"reject lower server login user=%s playerId=%s maxServerVersion=%d currentServerVersion=%d",
+			userID,
+			profile.PlayerID,
+			profile.MaxServerVersion,
+			currentServerVersion)
+		return runtime.NewError("player has already entered a higher version server", errorCodeServerVersionDowngradeForbidden)
+	}
+
+	if currentServerVersion > profile.MaxServerVersion {
+		if err := updatePlayerMaxServerVersion(ctx, db, userID, currentServerVersion); err != nil {
+			logger.Error("update max server version failed for %s: %v", userID, err)
+			return runtime.NewError("failed to update player server version", 13)
+		}
+		profile.MaxServerVersion = currentServerVersion
 	}
 
 	if err := nk.AccountUpdateId(ctx, userID, username, map[string]interface{}{}, "", "", "", "", ""); err != nil {
@@ -267,6 +308,8 @@ func ensureBootstrapSchema(db *sql.DB) error {
 			player_id BIGINT NOT NULL UNIQUE,
 			username TEXT NOT NULL
 		)`,
+		`ALTER TABLE player_profiles
+			ADD COLUMN IF NOT EXISTS max_server_version INTEGER NOT NULL DEFAULT 0`,
 	}
 
 	for _, query := range queries {
@@ -318,9 +361,9 @@ func ensurePlayerProfile(ctx context.Context, db *sql.DB, userID string, usernam
 	}
 
 	if _, err := tx.ExecContext(ctx, `
-		INSERT INTO player_profiles(user_id, player_id, username)
-		VALUES ($1, $2, $3)
-	`, userID, nextValue, username); err != nil {
+		INSERT INTO player_profiles(user_id, player_id, username, max_server_version)
+		VALUES ($1, $2, $3, $4)
+	`, userID, nextValue, username, currentServerVersion); err != nil {
 		return nil, false, err
 	}
 
@@ -329,21 +372,23 @@ func ensurePlayerProfile(ctx context.Context, db *sql.DB, userID string, usernam
 	}
 
 	return &playerProfile{
-		UserID:   userID,
-		PlayerID: fmt.Sprintf("%07d", nextValue),
-		Username: username,
+		UserID:           userID,
+		PlayerID:         fmt.Sprintf("%07d", nextValue),
+		Username:         username,
+		MaxServerVersion: currentServerVersion,
 	}, true, nil
 }
 
 func loadPlayerProfile(ctx context.Context, db *sql.DB, userID string) (*playerProfile, error) {
 	var numericID int64
 	var username string
+	var maxServerVersion int
 
 	err := db.QueryRowContext(ctx, `
-		SELECT player_id, username
+		SELECT player_id, username, max_server_version
 		FROM player_profiles
 		WHERE user_id = $1
-	`, userID).Scan(&numericID, &username)
+	`, userID).Scan(&numericID, &username, &maxServerVersion)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -352,8 +397,18 @@ func loadPlayerProfile(ctx context.Context, db *sql.DB, userID string) (*playerP
 	}
 
 	return &playerProfile{
-		UserID:   userID,
-		PlayerID: fmt.Sprintf("%07d", numericID),
-		Username: username,
+		UserID:           userID,
+		PlayerID:         fmt.Sprintf("%07d", numericID),
+		Username:         username,
+		MaxServerVersion: maxServerVersion,
 	}, nil
+}
+
+func updatePlayerMaxServerVersion(ctx context.Context, db *sql.DB, userID string, maxServerVersion int) error {
+	_, err := db.ExecContext(ctx, `
+		UPDATE player_profiles
+		SET max_server_version = $2
+		WHERE user_id = $1
+	`, userID, maxServerVersion)
+	return err
 }
