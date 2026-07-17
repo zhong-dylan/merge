@@ -169,22 +169,8 @@ func afterAuthenticateCustom(ctx context.Context, logger runtime.Logger, db *sql
 		return runtime.NewError("failed to initialize player profile", 13)
 	}
 
-	if profile.MaxServerVersion > currentServerVersion {
-		logger.Warn(
-			"reject lower server login user=%s playerId=%s maxServerVersion=%d currentServerVersion=%d",
-			userID,
-			profile.PlayerID,
-			profile.MaxServerVersion,
-			currentServerVersion)
-		return runtime.NewError("player has already entered a higher version server", errorCodeServerVersionDowngradeForbidden)
-	}
-
-	if currentServerVersion > profile.MaxServerVersion {
-		if err := updatePlayerMaxServerVersion(ctx, db, userID, currentServerVersion); err != nil {
-			logger.Error("update max server version failed for %s: %v", userID, err)
-			return runtime.NewError("failed to update player server version", 13)
-		}
-		profile.MaxServerVersion = currentServerVersion
+	if err := ensurePlayerServerVersion(ctx, logger, db, userID, profile); err != nil {
+		return err
 	}
 
 	if err := nk.AccountUpdateId(ctx, userID, username, map[string]interface{}{}, "", "", "", "", ""); err != nil {
@@ -266,6 +252,10 @@ func getPlayerProfile(ctx context.Context, logger runtime.Logger, db *sql.DB, nk
 	}
 	if profile == nil {
 		return "", runtime.NewError("player profile not found", 5)
+	}
+
+	if err := ensurePlayerServerVersion(ctx, logger, db, userID, profile); err != nil {
+		return "", err
 	}
 
 	account, err := nk.AccountGetId(ctx, userID)
@@ -377,6 +367,30 @@ func ensurePlayerProfile(ctx context.Context, db *sql.DB, userID string, usernam
 		Username:         username,
 		MaxServerVersion: currentServerVersion,
 	}, true, nil
+}
+
+func ensurePlayerServerVersion(ctx context.Context, logger runtime.Logger, db *sql.DB, userID string, profile *playerProfile) error {
+	if profile.MaxServerVersion > currentServerVersion {
+		logger.Warn(
+			"reject lower server login user=%s playerId=%s maxServerVersion=%d currentServerVersion=%d",
+			userID,
+			profile.PlayerID,
+			profile.MaxServerVersion,
+			currentServerVersion)
+		return runtime.NewError("player has already entered a higher version server", errorCodeServerVersionDowngradeForbidden)
+	}
+
+	if currentServerVersion <= profile.MaxServerVersion {
+		return nil
+	}
+
+	if err := updatePlayerMaxServerVersion(ctx, db, userID, currentServerVersion); err != nil {
+		logger.Error("update max server version failed for %s: %v", userID, err)
+		return runtime.NewError("failed to update player server version", 13)
+	}
+
+	profile.MaxServerVersion = currentServerVersion
+	return nil
 }
 
 func loadPlayerProfile(ctx context.Context, db *sql.DB, userID string) (*playerProfile, error) {

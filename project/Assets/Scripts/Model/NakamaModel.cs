@@ -77,12 +77,14 @@ public sealed class NakamaModel : ModelBase<NakamaModel>, IModel
 
         if (rpcTask.IsFaulted)
         {
+            SetConnection(null, null);
             onFailed?.Invoke(FormatNakamaFailure("Nakama bootstrap RPC failed", rpcTask.Exception));
             yield break;
         }
 
         if (rpcTask.IsCanceled)
         {
+            SetConnection(null, null);
             onFailed?.Invoke("Nakama bootstrap RPC was canceled.");
             yield break;
         }
