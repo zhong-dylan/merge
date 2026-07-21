@@ -17,18 +17,8 @@ MonoBehaviour:
     m_SerializedData: []
   m_GUID: 3b84389554c4541a898e16aa2ba60293
   m_SerializeEntries:
-  - m_GUID: 1a9b6a3ea9bfb4eb0a4fb6871a4247e3
-    m_Address: Bg/20260609-180019_remote
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: a91d5469be953435ebb44bdb77289277
-    m_Address: Bg/20260610-110217_remote
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 313f790befe5e4df491e97632516293a
-    m_Address: "Bg/ChatGPT Image 2026\u5E746\u67089\u65E5 20_02_09_remote"
+  - m_GUID: c6b1a71158e264c149a494e3ce1b8caf
+    m_Address: Bg/main_remote
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

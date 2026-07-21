@@ -374,7 +374,7 @@ MonoBehaviour:
   enableLogger: 1
   userName: player_001
   selectedServerMode: 0
-  serverVersion: 101
+  serverVersion: 102
   localHost: http://127.0.0.1
   devHost: http://127.0.0.1
   releaseHost: http://127.0.0.1

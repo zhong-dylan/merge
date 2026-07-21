@@ -118,6 +118,17 @@ public class GameLaunch : MonoBehaviour
     private void OnLoginSuccess(PlayerBootstrapResponse profile)
     {
         UpdateLoginProgress(1f);
+        UIMgr.I.OpenView<UIMainView>(view =>
+        {
+            if (view == null)
+            {
+                Logger.Warn($"Main view not found in Addressables: {nameof(UIMainView)}", this);
+                return;
+            }
+
+            UIMgr.I.CloseView<UILoginView>();
+            loginView = null;
+        });
     }
 
     private void OnFontLoaded(Font font)
