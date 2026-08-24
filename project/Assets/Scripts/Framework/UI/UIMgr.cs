@@ -81,13 +81,14 @@ public sealed class UIMgr : MonoSingle<UIMgr>
         RefreshLayerOrders(view.Layer);
     }
 
-    public void OpenView<T>(Action<T> onLoaded = null) where T : ViewBase
+    public void OpenView<T>(Action<T> onLoaded = null) where T : ViewBase, new()
     {
         var existingView = GetView<T>();
         if (existingView != null)
         {
             existingView.gameObject.SetActive(true);
             RegisterView(existingView);
+            existingView.Open();
             onLoaded?.Invoke(existingView);
             return;
         }
@@ -110,19 +111,24 @@ public sealed class UIMgr : MonoSingle<UIMgr>
                 return;
             }
 
-            var prefabView = prefab.GetComponent<T>();
-            var layer = prefabView != null ? prefabView.Layer : UILayer.Main;
+            var view = new T();
+            var layer = view.Layer;
             EnsureLayer(layer);
 
             var instance = Instantiate(prefab, layerRoots[layer], false);
-            var view = instance.GetComponent<T>();
-            if (view == null)
+            var monoItem = instance.GetComponent<MonoItem>();
+            if (monoItem == null)
             {
-                view = instance.AddComponent<T>();
+                Logger.Error($"UI prefab missing MonoItem: {prefabPath}");
+                Destroy(instance);
+                onLoaded?.Invoke(null);
+                return;
             }
 
+            view.Bind(monoItem);
             openedViews[typeof(T)] = view;
             RegisterView(view);
+            view.Open();
             onLoaded?.Invoke(view);
         });
     }
@@ -163,7 +169,12 @@ public sealed class UIMgr : MonoSingle<UIMgr>
 
         UnregisterView(view);
         openedViews.Remove(view.GetType());
-        Destroy(view.gameObject);
+        var instance = view.gameObject;
+        view.Dispose();
+        if (instance != null)
+        {
+            Destroy(instance);
+        }
     }
 
     private void EnsureLoader()
@@ -333,17 +344,8 @@ public sealed class UIMgr : MonoSingle<UIMgr>
         return uiCamera;
     }
 
-    private static string GetPrefabPath<T>() where T : ViewBase
+    private static string GetPrefabPath<T>() where T : ViewBase, new()
     {
-        var tempObject = new GameObject($"__{typeof(T).Name}_PrefabPath__");
-        try
-        {
-            var tempView = tempObject.AddComponent<T>();
-            return tempView.PrefabPath;
-        }
-        finally
-        {
-            DestroyImmediate(tempObject);
-        }
+        return new T().PrefabPath;
     }
 }

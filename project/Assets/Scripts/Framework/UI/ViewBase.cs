@@ -1,89 +1,62 @@
-using System;
 using UnityEngine;
 using UnityEngine.UI;
 
-[ExecuteAlways]
-[RequireComponent(typeof(RectTransform))]
-public class ViewBase : MonoItem
+public class ViewBase : ViewItem
 {
-    [SerializeField] private UILayer layer = UILayer.Main;
-
     private Canvas canvas;
     private GraphicRaycaster graphicRaycaster;
     private Coroutine autoCloseCoroutine;
-    private bool isInited;
+    private bool isOpened;
 
-    public UILayer Layer => Enum.IsDefined(typeof(UILayer), layer) ? layer : UILayer.Main;
+    public virtual UILayer Layer => UILayer.Main;
     public Canvas Canvas => canvas;
     public virtual string PrefabPath => string.Empty;
     protected virtual bool EnableAutoClose => true;
     protected virtual float AutoCloseDelaySeconds => 30f;
 
-    protected override void Awake()
+    public override void Bind(MonoItem item)
     {
-        base.Awake();
+        base.Bind(item);
         ApplyLayout();
-        if (Application.isPlaying)
+        EnsureCanvas();
+    }
+
+    /// <summary>
+    /// ui初始化完毕
+    /// </summary>
+    public void Open()
+    {
+        if (isOpened)
         {
-            EnsureCanvas();
-            TryInit();
+            return;
         }
+
+        isOpened = true;
+        OpenUpdate();
+        OnEvent();
+        OnOpened();
+        StartAutoClose();
     }
 
-    protected virtual void Reset()
+    public void Close()
     {
-        ApplyLayout();
-    }
-
-    protected virtual void OnValidate()
-    {
-        ApplyLayout();
-    }
-
-    protected virtual void OnEnable()
-    {
-        if (Application.isPlaying)
+        if (!isOpened)
         {
-            UIMgr.I.RegisterView(this);
-            TimeMgr.I.AddUpdate(HandleUpdate);
-            OnEvent();
-            StartAutoClose();
+            return;
         }
-    }
 
-    protected virtual void OnDisable()
-    {
-        if (Application.isPlaying)
-        {
-            StopAutoClose();
-            OnRemoveEvent();
-            if (TimeMgr.TryGet(out var timeMgr))
-            {
-                timeMgr.RemoveUpdate(HandleUpdate);
-            }
-
-            if (UIMgr.TryGet(out var uiMgr))
-            {
-                uiMgr.UnregisterView(this);
-            }
-        }
-    }
-
-    protected override void OnDestroy()
-    {
-        base.OnDestroy();
+        isOpened = false;
         StopAutoClose();
-        if (Application.isPlaying && TimeMgr.TryGet(out var timeMgr))
-        {
-            timeMgr.RemoveUpdate(HandleUpdate);
-        }
-
-        OnDestory();
+        OnRemoveEvent();
+        CloseUpdate();
     }
 
-    public void SetLayer(UILayer targetLayer)
+    public override void Dispose()
     {
-        layer = targetLayer;
+        Close();
+        base.Dispose();
+        canvas = null;
+        graphicRaycaster = null;
     }
 
     public void ApplyCanvas(UILayer sortingLayer, int sortingOrder, Camera targetCamera)
@@ -100,27 +73,37 @@ public class ViewBase : MonoItem
 
     private void EnsureCanvas()
     {
+        if (Item == null)
+        {
+            return;
+        }
+
         if (canvas == null)
         {
-            canvas = GetComponent<Canvas>();
+            canvas = Item.GetComponent<Canvas>();
             if (canvas == null)
             {
-                canvas = gameObject.AddComponent<Canvas>();
+                canvas = Item.gameObject.AddComponent<Canvas>();
             }
         }
 
         if (graphicRaycaster == null)
         {
-            graphicRaycaster = GetComponent<GraphicRaycaster>();
+            graphicRaycaster = Item.GetComponent<GraphicRaycaster>();
             if (graphicRaycaster == null)
             {
-                graphicRaycaster = gameObject.AddComponent<GraphicRaycaster>();
+                graphicRaycaster = Item.gameObject.AddComponent<GraphicRaycaster>();
             }
         }
     }
 
     private void ApplyLayout()
     {
+        if (Item == null)
+        {
+            return;
+        }
+
         var rectTransform = transform as RectTransform;
         if (rectTransform != null)
         {
@@ -148,40 +131,16 @@ public class ViewBase : MonoItem
         context.anchoredPosition = Vector2.zero;
     }
 
-    protected virtual void OnInit()
+    protected virtual void OnEvent()
     {
     }
 
-    protected virtual void OnEvent()
+    protected virtual void OnOpened()
     {
     }
 
     protected virtual void OnRemoveEvent()
     {
-    }
-
-    protected virtual void OnUpdate(float deltaTime)
-    {
-    }
-
-    protected virtual void OnDestory()
-    {
-    }
-
-    private void TryInit()
-    {
-        if (isInited)
-        {
-            return;
-        }
-
-        isInited = true;
-        OnInit();
-    }
-
-    private void HandleUpdate(float deltaTime)
-    {
-        OnUpdate(deltaTime);
     }
 
     private void StartAutoClose()
@@ -212,7 +171,7 @@ public class ViewBase : MonoItem
     private void AutoClose()
     {
         autoCloseCoroutine = null;
-        if (this == null || !gameObject.activeInHierarchy)
+        if (gameObject == null || !gameObject.activeInHierarchy)
         {
             return;
         }
