@@ -22,12 +22,6 @@ public static class SpriteAtlasAutoBuilder
     {
         new()
         {
-            SourceRoot = "Assets/Aarts/Atlas_Local",
-            OutputRoot = "Assets/Addressables_Local/Atlas",
-            IncludeInBuild = true,
-        },
-        new()
-        {
             SourceRoot = "Assets/Aarts/Atlas_Remote",
             OutputRoot = "Assets/Addressables_Remote/Atlas",
             IncludeInBuild = false,

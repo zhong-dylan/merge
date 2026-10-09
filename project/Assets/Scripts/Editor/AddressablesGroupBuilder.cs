@@ -10,9 +10,7 @@ using UnityEngine;
 
 public static class AddressablesGroupBuilder
 {
-    private const string LocalRoot = "Assets/Addressables_Local";
     private const string RemoteRoot = "Assets/Addressables_Remote";
-    private const string LocalPrefix = "local_";
     private const string RemotePrefix = "remote_";
 
     [MenuItem("Tools/Addressables/Sync Folder Groups")]
@@ -27,19 +25,17 @@ public static class AddressablesGroupBuilder
 
         var validGroupNames = new HashSet<string>();
 
-        SyncRoot(settings, LocalRoot, LocalPrefix, false, validGroupNames);
         SyncRoot(settings, RemoteRoot, RemotePrefix, true, validGroupNames);
         RemoveUnusedGroups(settings, validGroupNames);
 
         AssetDatabase.SaveAssets();
 
-        Debug.Log("Addressables groups synced from Addressables_Local and Addressables_Remote.");
+        Debug.Log("Addressables groups synced from Addressables_Remote.");
     }
 
     public static bool IsManagedPath(string assetPath)
     {
-        return assetPath.StartsWith(LocalRoot, StringComparison.OrdinalIgnoreCase)
-            || assetPath.StartsWith(RemoteRoot, StringComparison.OrdinalIgnoreCase);
+        return assetPath.StartsWith(RemoteRoot, StringComparison.OrdinalIgnoreCase);
     }
 
     public static void SyncChangedPaths(IEnumerable<string> assetPaths)
@@ -176,7 +172,6 @@ public static class AddressablesGroupBuilder
     private static HashSet<string> BuildValidGroupNames()
     {
         var result = new HashSet<string>();
-        AddValidGroupNames(result, LocalRoot, LocalPrefix);
         AddValidGroupNames(result, RemoteRoot, RemotePrefix);
         return result;
     }
@@ -202,7 +197,7 @@ public static class AddressablesGroupBuilder
         }
 
         var normalizedPath = assetPath.Replace('\\', '/');
-        foreach (var rootPath in new[] { LocalRoot, RemoteRoot })
+        foreach (var rootPath in new[] { RemoteRoot })
         {
             if (!normalizedPath.StartsWith(rootPath, StringComparison.OrdinalIgnoreCase))
             {
@@ -225,11 +220,6 @@ public static class AddressablesGroupBuilder
     private static (string prefix, bool isRemote)? GetRootInfo(string folderPath)
     {
         var normalizedPath = folderPath.Replace('\\', '/');
-        if (normalizedPath.StartsWith(LocalRoot, StringComparison.OrdinalIgnoreCase))
-        {
-            return (LocalPrefix, false);
-        }
-
         if (normalizedPath.StartsWith(RemoteRoot, StringComparison.OrdinalIgnoreCase))
         {
             return (RemotePrefix, true);
@@ -240,8 +230,7 @@ public static class AddressablesGroupBuilder
 
     private static bool IsManagedGroup(string groupName)
     {
-        return groupName.StartsWith(LocalPrefix, StringComparison.OrdinalIgnoreCase)
-            || groupName.StartsWith(RemotePrefix, StringComparison.OrdinalIgnoreCase);
+        return groupName.StartsWith(RemotePrefix, StringComparison.OrdinalIgnoreCase);
     }
 
     private static AddressableAssetGroup GetOrCreateGroup(AddressableAssetSettings settings, string groupName, bool isRemote)
@@ -263,14 +252,14 @@ public static class AddressablesGroupBuilder
         var bundledSchema = group.GetSchema<BundledAssetGroupSchema>();
         if (bundledSchema != null)
         {
-            bundledSchema.BuildPath.SetVariableByName(group.Settings, isRemote ? AddressableAssetSettings.kRemoteBuildPath : AddressableAssetSettings.kLocalBuildPath);
-            bundledSchema.LoadPath.SetVariableByName(group.Settings, isRemote ? AddressableAssetSettings.kRemoteLoadPath : AddressableAssetSettings.kLocalLoadPath);
+            bundledSchema.BuildPath.SetVariableByName(group.Settings, AddressableAssetSettings.kRemoteBuildPath);
+            bundledSchema.LoadPath.SetVariableByName(group.Settings, AddressableAssetSettings.kRemoteLoadPath);
         }
 
         var contentUpdateSchema = group.GetSchema<ContentUpdateGroupSchema>();
         if (contentUpdateSchema != null)
         {
-            contentUpdateSchema.StaticContent = !isRemote;
+            contentUpdateSchema.StaticContent = false;
         }
 
         EditorUtility.SetDirty(group);
@@ -286,6 +275,12 @@ public static class AddressablesGroupBuilder
 
     private static bool IsAddressableAssetFile(string assetPath)
     {
+        // GameLaunch references the login prefab directly so it ships with the player.
+        if (string.Equals(assetPath, "Assets/Addressables_Remote/Prefabs/UI_Login.prefab", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
         if (AssetDatabase.IsValidFolder(assetPath))
         {
             return false;
@@ -304,7 +299,6 @@ public static class AddressablesGroupBuilder
     private static string BuildAddress(string folderName, string assetPath, bool isRemote)
     {
         var assetName = Path.GetFileNameWithoutExtension(assetPath);
-        var suffix = isRemote ? "_remote" : "_local";
-        return $"{folderName}/{assetName}{suffix}";
+        return $"{folderName}/{assetName}_remote";
     }
 }

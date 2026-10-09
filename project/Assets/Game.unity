@@ -371,7 +371,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26abdcf88e51b40eda88ef62906a5bb7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  launchConfig: {fileID: 11400000, guid: 71f7242c94d645b3bda9d899942a3351, type: 2}
+  configName: Debug
+  userName: player_001
+  loginPrefab: {fileID: 5199515464025025807, guid: 81c771d21de434952a55ef7510b46826, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -4,7 +4,6 @@ public class UILoginView : ViewBase
     private ProgressAnimator progressAnimator;
 
     public override UILayer Layer => UILayer.Login;
-    public override string PrefabPath => "Prefabs/UI_Login_local";
     protected override bool EnableAutoClose => false;
 
     protected override void OnInit()

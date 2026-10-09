@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(RectTransform))]
 public class ViewBase : ViewItem
 {
     private Canvas canvas;
@@ -14,11 +15,16 @@ public class ViewBase : ViewItem
     protected virtual bool EnableAutoClose => true;
     protected virtual float AutoCloseDelaySeconds => 30f;
 
-    public override void Bind(MonoItem item)
+    protected override void Awake()
     {
-        base.Bind(item);
         ApplyLayout();
         EnsureCanvas();
+        base.Awake();
+    }
+
+    protected virtual void OnDisable()
+    {
+        Close();
     }
 
     /// <summary>

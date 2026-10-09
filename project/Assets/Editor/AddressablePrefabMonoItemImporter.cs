@@ -6,7 +6,6 @@ using UnityEngine;
 
 public sealed class AddressablePrefabMonoItemImporter : AssetPostprocessor
 {
-    private const string LocalPrefabRoot = "Assets/Addressables_Local/Prefabs";
     private const string RemotePrefabRoot = "Assets/Addressables_Remote/Prefabs";
 
     private static readonly HashSet<string> pendingPrefabPaths = new();
@@ -14,7 +13,7 @@ public sealed class AddressablePrefabMonoItemImporter : AssetPostprocessor
     [MenuItem("Tools/UI/Ensure MonoItem On Addressable Prefabs")]
     public static void EnsureAllAddressablePrefabs()
     {
-        var prefabPaths = AssetDatabase.FindAssets("t:Prefab", new[] { LocalPrefabRoot, RemotePrefabRoot })
+        var prefabPaths = AssetDatabase.FindAssets("t:Prefab", new[] { RemotePrefabRoot })
             .Select(AssetDatabase.GUIDToAssetPath)
             .Where(IsManagedPrefabPath)
             .Distinct()
@@ -91,8 +90,7 @@ public sealed class AddressablePrefabMonoItemImporter : AssetPostprocessor
         }
 
         return assetPath.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase)
-            && (assetPath.StartsWith(LocalPrefabRoot, StringComparison.OrdinalIgnoreCase)
-                || assetPath.StartsWith(RemotePrefabRoot, StringComparison.OrdinalIgnoreCase));
+            && assetPath.StartsWith(RemotePrefabRoot, StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool EnsureMonoItem(string prefabPath)

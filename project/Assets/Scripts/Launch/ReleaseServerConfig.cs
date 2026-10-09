@@ -1,13 +1,6 @@
 using System;
 using UnityEngine;
 
-public enum LaunchServerMode
-{
-    Local,
-    Dev,
-    Release,
-}
-
 public sealed class ReleaseServerConfig
 {
     public string Version { get; set; }
@@ -43,18 +36,6 @@ public static class ReleaseServerConfigResolver
     private const int BaseHttpPort = 7350;
     private const int PortStep = 10;
 
-    public static ReleaseServerConfig ResolveByMode(
-        LaunchServerMode mode,
-        int version,
-        string localHost,
-        string devHost,
-        string releaseHost,
-        string serverKey,
-        out string error)
-    {
-        return ResolveByHost(GetHost(mode, localHost, devHost, releaseHost), GetModeName(mode), version, serverKey, out error);
-    }
-
     public static string TryExtractGameIp(ReleaseServerConfig config)
     {
         if (config == null || !Uri.TryCreate(config.ServerAddress, UriKind.Absolute, out var uri))
@@ -85,7 +66,7 @@ public static class ReleaseServerConfigResolver
         return $"{prefix} {version}";
     }
 
-    private static ReleaseServerConfig ResolveByHost(string host, string namePrefix, int releaseNumber, string serverKey, out string error)
+    public static ReleaseServerConfig ResolveByHost(string host, string namePrefix, int releaseNumber, string serverKey, out string error)
     {
         error = null;
 
@@ -118,26 +99,6 @@ public static class ReleaseServerConfigResolver
         }
 
         return config;
-    }
-
-    private static string GetHost(LaunchServerMode mode, string localHost, string devHost, string releaseHost)
-    {
-        return mode switch
-        {
-            LaunchServerMode.Local => localHost,
-            LaunchServerMode.Dev => devHost,
-            _ => releaseHost,
-        };
-    }
-
-    private static string GetModeName(LaunchServerMode mode)
-    {
-        return mode switch
-        {
-            LaunchServerMode.Local => "Local",
-            LaunchServerMode.Dev => "Dev",
-            _ => "Release",
-        };
     }
 
     private static string BuildHttpUrl(string baseUrl, int port)

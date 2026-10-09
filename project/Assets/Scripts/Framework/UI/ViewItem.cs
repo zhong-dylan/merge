@@ -1,36 +1,37 @@
 using UnityEngine;
 
-public class ViewItem
+public class ViewItem : MonoItem
 {
-    private MonoItem monoItem;
     private bool isInited;
+    private bool isDisposed;
 
-    public MonoItem Item => monoItem;
-    public GameObject gameObject => monoItem != null ? monoItem.gameObject : null;
-    public Transform transform => monoItem != null ? monoItem.transform : null;
+    public MonoItem Item => this;
 
     protected virtual bool EnableUpdate => false;
 
-    public ViewItem()
+    protected override void Awake()
     {
+        base.Awake();
         TryInit();
     }
 
-    public virtual void Bind(MonoItem item)
+    protected override void OnDestroy()
     {
-        monoItem = item;
-        OnBind();
+        Dispose();
+        base.OnDestroy();
     }
 
     public virtual void Dispose()
     {
-        OnDestory();
-        if (monoItem != null)
+        if (isDisposed)
         {
-            Utils.ReleaseMonoItemState(monoItem);
+            return;
         }
 
-        monoItem = null;
+        isDisposed = true;
+        CloseUpdate();
+        OnDestory();
+        Utils.ReleaseMonoItemState(this);
     }
 
     protected void OpenUpdate()
@@ -47,10 +48,6 @@ public class ViewItem
         {
             timeMgr.RemoveUpdate(HandleUpdate);
         }
-    }
-
-    protected virtual void OnBind()
-    {
     }
 
     protected virtual void OnInit()

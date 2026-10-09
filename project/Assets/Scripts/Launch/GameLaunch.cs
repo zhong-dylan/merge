@@ -2,28 +2,38 @@ using UnityEngine;
 
 public class GameLaunch : MonoBehaviour
 {
-    [SerializeField] private LaunchConfig launchConfig;
+    [SerializeField] private string configName = "Debug";
+    [SerializeField] private string userName = "player_001";
+    [SerializeField] private UILoginView loginPrefab;
 
     private UILoginView loginView;
-    private bool isLoginViewReady;
-    private LaunchConfig Config
+    private LaunchConfig activeConfig;
+
+    private System.Collections.IEnumerator Start()
     {
-        get
+        var loader = GetComponent<Loader>();
+        if (loader == null)
         {
-            if (launchConfig == null)
-            {
-                launchConfig = ScriptableObject.CreateInstance<LaunchConfig>();
-            }
-
-            return launchConfig;
+            loader = gameObject.AddComponent<Loader>();
         }
-    }
 
-    private void Start()
-    {
-        Logger.SetEnable(Config.EnableLogger);
+        var configLoaded = false;
+        loader.Load<LaunchConfig>($"LaunchConfigs/{configName}", config =>
+        {
+            activeConfig = config;
+            configLoaded = true;
+        });
+        yield return new WaitUntil(() => configLoaded);
+
+        if (activeConfig == null)
+        {
+            Debug.LogError($"Missing launch config: {configName}.", this);
+            yield break;
+        }
+
+        Logger.SetEnable(activeConfig.EnableLogger);
         InitManagers();
-        StartCoroutine(LaunchCoroutine());
+        yield return LaunchCoroutine();
     }
 
     private void InitManagers()
@@ -64,16 +74,17 @@ public class GameLaunch : MonoBehaviour
 
         Logger.Info("Launch step 2/5: init login view.", this);
         OpenLoginView();
-        yield return new WaitUntil(() => isLoginViewReady);
+        if (loginView == null)
+        {
+            yield break;
+        }
 
         Logger.Info("Launch step 3/5: resolve server.", this);
-        var config = Config;
-        var releaseConfig = ReleaseServerConfigResolver.ResolveByMode(
-            config.SelectedServerMode,
+        var config = activeConfig;
+        var releaseConfig = ReleaseServerConfigResolver.ResolveByHost(
+            config.Host,
+            configName,
             config.ServerVersion,
-            config.LocalHost,
-            config.DevHost,
-            config.ReleaseHost,
             config.ServerKey,
             out var resolveError);
         if (releaseConfig == null)
@@ -91,7 +102,7 @@ public class GameLaunch : MonoBehaviour
             releaseConfig.AdminAddress);
         var resolvedIp = ReleaseServerConfigResolver.TryExtractGameIp(releaseConfig);
         Logger.Info(
-            $"Server={config.SelectedServerMode} version={releaseConfig.Version} ip={resolvedIp} game={releaseConfig.ServerAddress} admin={releaseConfig.AdminAddress}",
+            $"Config={configName} version={releaseConfig.Version} ip={resolvedIp} game={releaseConfig.ServerAddress} admin={releaseConfig.AdminAddress}",
             this);
         UpdateLoginProgress(0.55f);
 
@@ -100,26 +111,19 @@ public class GameLaunch : MonoBehaviour
         UpdateLoginProgress(0.7f);
 
         Logger.Info("Launch step 5/5: login.", this);
-        yield return NakamaModel.I.Login(selectedServer, config.UserName, OnLoginSuccess, OnLoginFailed);
+        yield return NakamaModel.I.Login(selectedServer, userName, OnLoginSuccess, OnLoginFailed);
     }
 
     private void OpenLoginView()
     {
-        isLoginViewReady = false;
-
-        UIMgr.I.OpenView<UILoginView>(view =>
+        loginView = UIMgr.I.OpenView(loginPrefab);
+        if (loginView == null)
         {
-            loginView = view;
-            isLoginViewReady = true;
+            OnLoginFailed("Login prefab is missing on GameLaunch.");
+            return;
+        }
 
-            if (view == null)
-            {
-                Logger.Warn($"Login view not found in Addressables: {nameof(UILoginView)}", this);
-                return;
-            }
-
-            UpdateLoginProgress(0.2f);
-        });
+        UpdateLoginProgress(0.2f);
     }
 
     private void OnLoginSuccess(PlayerBootstrapResponse profile)

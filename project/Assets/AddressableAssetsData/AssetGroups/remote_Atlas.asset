@@ -17,6 +17,11 @@ MonoBehaviour:
     m_SerializedData: []
   m_GUID: b2df8819fe7814e16825d6f081f3763f
   m_SerializeEntries:
+  - m_GUID: 93e32dc3eea8a46e3a69584df8d56416
+    m_Address: Atlas/Login_remote
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9e93313c33bdc40d79acb7b841f60052
     m_Address: Atlas/Main_remote
     m_ReadOnly: 0
