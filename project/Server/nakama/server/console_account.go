@@ -480,6 +480,17 @@ func (s *ConsoleServer) ListAccounts(ctx context.Context, in *console.ListAccoun
 					WHERE id = $2`
 		}
 
+
+		// Business player IDs are indexed BIGINT values, distinct from Nakama UUIDs.
+		if playerID, err := strconv.ParseInt(in.Filter, 10, 64); err == nil && playerID > 0 {
+			params = append(params, playerID)
+			query += `
+				UNION
+				SELECT id, username, display_name, avatar_url, lang_tag, location, timezone, metadata, apple_id, facebook_id, facebook_instant_game_id, google_id, gamecenter_id, steam_id, edge_count, create_time, update_time
+					FROM users
+					WHERE id IN (SELECT user_id FROM player_profiles WHERE player_id = $` + strconv.Itoa(len(params)) + `)`
+		}
+
 		users := make([]*api.User, 0, defaultLimit)
 
 		rows, err := s.db.QueryContext(ctx, query, params...)
