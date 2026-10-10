@@ -11,10 +11,12 @@ These scripts manage the local Nakama server for one active version at a time.
 
 ```bash
 cd Server
-./Tools/start.sh 101
+./Tools/switch.sh 101
+./Tools/build.sh
+./Tools/start.sh
 ```
 
-This switches the current config to version `101`, starts shared PostgreSQL, builds Nakama, starts Nakama, and streams logs.
+This selects version `101` and builds its version-specific image explicitly. `start.sh` starts shared PostgreSQL and Nakama using the existing image, then streams logs. It never builds images.
 
 To switch the current config without stopping or starting servers:
 
@@ -98,3 +100,63 @@ For version `101`:
 - gRPC: `8349`
 - HTTP: `8350`
 - Console: `8351`
+
+## Build from local Nakama source
+
+`build.sh` compiles `Server/nakama` and the business plugin in Linux containers.
+`start.sh` runs the resulting image without compiling or building it.
+No host Go installation is required. Build the selected version before its first start.
+
+```bash
+cd Server
+./Tools/switch.sh 103  # Select the server version
+./Tools/build.sh       # Compile and build its image
+./Tools/start.sh       # Start the existing image and stream logs
+```
+
+The builder uses Go 1.27.1, as required by the checked-in Nakama source. Both
+Nakama and `backend.so` use `nakama/go.mod` and `nakama/vendor` dependencies to
+keep Go plugin package versions consistent. If business code adds an external
+dependency, add it to Nakama's dependency set and regenerate its vendor directory.
+The compiled console UI in `nakama/console/ui/dist` is embedded in the server.
+The first build needs access to Docker Hub and Debian package repositories.
+
+## Deploy to a Linux server using Docker
+
+By default `build.sh` builds **linux/amd64**, including on an ARM Mac. It checks
+image architecture and the executable, checks runtime modules, and exports a
+package under `Server/dist/nakama<version>-linux-amd64/` containing `image.tar.gz`,
+configuration, and deployment scripts. The deployment Compose file uses the
+prebuilt image and has no build step. Runtime Config files are included in the image.
+
+```bash
+cd Server
+./Tools/build.sh
+# Copy dist/nakama103-linux-amd64/ to the Linux x86_64 server.
+# On that server, enter the copied directory:
+./deploy.sh
+```
+
+The server needs Docker Engine and Docker Compose v2, but no Go compiler or source
+checkout. `deploy.sh` loads the image and starts Nakama and shared PostgreSQL.
+PostgreSQL's `postgres:15-alpine` image must already exist or be downloadable.
+Review `releases/nakama.yml` and `releases/compose.env` for database settings and
+credentials before deployment. Deployment starts the selected version without
+running `switch.sh`; `start.sh` never compiles. Logs stream until Ctrl-C; containers
+continue running in the background.
+
+For an ARM64 target use `BUILD_PLATFORM=linux/arm64 ./Tools/build.sh`.
+
+## Version-specific images
+
+Each server version uses its own image, such as `nakama104-nakama:latest`.
+The workflow is:
+
+```bash
+cd Server
+./Tools/switch.sh 104  # Select configuration
+./Tools/build.sh       # Compile and export the version-specific image
+./Tools/start.sh       # Start the existing image without compiling
+```
+
+The exported deployment package references the same version-specific image.

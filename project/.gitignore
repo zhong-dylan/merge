@@ -1,3 +1,6 @@
 Server/serverconfig/env.local
 Server/serverconfig/env.*.local
 Server/Config/client.config.json
+
+# Generated server deployment images and configuration
+Server/dist/

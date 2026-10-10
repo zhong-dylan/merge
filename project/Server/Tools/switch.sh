@@ -135,6 +135,7 @@ EOF
 cat > "${COMPOSE_PATH}" <<'EOF'
 services:
   nakama:
+    image: nakama${RELEASE_VERSION}-nakama:latest
     build:
       context: ..
       dockerfile: Dockerfile

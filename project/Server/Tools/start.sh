@@ -8,9 +8,6 @@ LOG_DIR="${SERVER_DIR}/logs"
 RELEASES_DIR="${SERVER_DIR}/releases"
 COMPOSE_FILE="${RELEASES_DIR}/docker-compose.yml"
 COMPOSE_ENV="${RELEASES_DIR}/compose.env"
-NAKAMA_VERSION="3.39.0"
-NAKAMA_IMAGE="heroiclabs/nakama:${NAKAMA_VERSION}"
-PLUGINBUILDER_IMAGE="heroiclabs/nakama-pluginbuilder:${NAKAMA_VERSION}"
 VERSION_ARG="${1:-}"
 
 cd "${SERVER_DIR}"
@@ -38,18 +35,6 @@ ensure_docker_running() {
 
   echo "Docker did not become ready in time."
   exit 1
-}
-
-ensure_image_present() {
-  local image="$1"
-
-  if docker image inspect "${image}" >/dev/null 2>&1; then
-    echo "Using local image: ${image}"
-    return 0
-  fi
-
-  echo "Pulling missing image: ${image}"
-  docker pull "${image}"
 }
 
 ensure_shared_postgres() {
@@ -87,18 +72,23 @@ ensure_docker_running
 mkdir -p "${LOG_DIR}"
 LOG_FILE="${LOG_DIR}/nakama-${VERSION}-$(date +%Y%m%d-%H%M%S).log"
 
-echo "Checking Nakama base images..."
-ensure_image_present "${NAKAMA_IMAGE}"
-ensure_image_present "${PLUGINBUILDER_IMAGE}"
-
 echo "Starting shared PostgreSQL..."
 ensure_shared_postgres
 
-echo "Building Nakama ${VERSION} image with local Docker cache..."
-DOCKER_BUILDKIT=0 COMPOSE_DOCKER_CLI_BUILD=0 docker compose --project-name "nakama${VERSION}" --env-file "${COMPOSE_ENV}" -f "${COMPOSE_FILE}" build --pull=false nakama
+# A newly created database may not accept migrations immediately.
+for _ in {1..30}; do
+  if docker exec nakama-postgres pg_isready -U local -d nakama >/dev/null 2>&1; then
+    break
+  fi
+  sleep 2
+done
+if ! docker exec nakama-postgres pg_isready -U local -d nakama >/dev/null 2>&1; then
+  echo "Shared PostgreSQL did not become ready." >&2
+  exit 1
+fi
 
 echo "Starting Nakama ${VERSION}..."
-docker compose --project-name "nakama${VERSION}" --env-file "${COMPOSE_ENV}" -f "${COMPOSE_FILE}" up -d --no-build nakama
+docker compose --project-name "nakama${VERSION}" --env-file "${COMPOSE_ENV}" -f "${COMPOSE_FILE}" up -d --no-build --pull never nakama
 
 echo "Services are up:"
 postgres_status="$(docker inspect -f '{{.State.Status}}' nakama-postgres 2>/dev/null || true)"

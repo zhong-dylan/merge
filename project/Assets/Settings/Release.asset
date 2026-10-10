@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Release
   m_EditorClassIdentifier: 
   enableLogger: 0
-  serverVersion: 102
+  serverVersion: 103
   serverKey: local_socket_server_key_change_me
   host: http://127.0.0.1

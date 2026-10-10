@@ -1,0 +1,6 @@
+logs/
+releases/
+nakama/.git/
+nakama/.github/
+nakama/node_modules/
+dist/
